@@ -8,20 +8,18 @@
  */
 import { startBotDevMode, startBotDeployMode } from "./Bot.js";
 import CusConfig from "./utils/CusConfig.js";
+import * as readlineSync from "readline-sync";
 
 async function main() {
   const cusConfig = new CusConfig("CusConfig.json");
   const args = process.argv.slice(2);
 
-  if (args[1] == undefined) {
-    console.log("Please input the bot token as the second argument.");
-    return;
-  }
+  const botToken = readlineSync.question("Please input your bot token: ");
 
   if (args[0] == "--dev") {
-    await startBotDevMode(cusConfig, args[1]);
+    await startBotDevMode(cusConfig, botToken);
   } else if (args[0] == "--deploy") {
-    await startBotDeployMode(cusConfig, args[1]);
+    await startBotDeployMode(cusConfig, botToken);
   } else {
     throw new Error(`Unknown index.js main args: ${args[0]}`);
   }
