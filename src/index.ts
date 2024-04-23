@@ -10,23 +10,26 @@ import { startBotDevMode, startBotDeployMode } from "./Bot.js";
 import CusConfig from "./utils/CusConfig.js";
 
 async function main() {
-    const cusConfig = new CusConfig("configs/configs.json");
-    const args = process.argv.slice(2);
+  const cusConfig = new CusConfig("CusConfig.json");
+  const args = process.argv.slice(2);
 
-    if (args[0] == "--dev") {
-        await startBotDevMode(cusConfig);
-    } else if (args[0] == "--deploy") {
-        await startBotDeployMode(cusConfig);
-    } else {
-        throw new Error(`Unknown index.js main args: ${args[0]}`)
-    }
+  if (args[1] == undefined) {
+    console.log("Please input the bot token as the second argument.");
+    return;
+  }
+
+  if (args[0] == "--dev") {
+    await startBotDevMode(cusConfig, args[1]);
+  } else if (args[0] == "--deploy") {
+    await startBotDeployMode(cusConfig, args[1]);
+  } else {
+    throw new Error(`Unknown index.js main args: ${args[0]}`);
+  }
 }
 
-async function te() {
-    let count = 10000;
-    let i = 0;
-    while (i < count) {
-        
-    }
+function te() {
+  const args = process.argv.slice(2);
+  console.log(args);
 }
+
 main();
