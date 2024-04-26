@@ -11,11 +11,6 @@ import { LogLevel, levelLog } from "./utils/LevelLog.js";
 import { formatMarkDownStr } from "./utils/ToolFunc.js";
 import express from "express";
 
-/**
- * @description: 进行bot的除了部署以外的初始化
- * @param {CusConfig} cusConfig 配置文件
- * @return {Bot<Context, Api<RawApi>>} bot 返回的bot
- */
 async function initBot(cusConfig: CusConfig, botToken: string) {
   const dan = await DanbooruApi.Build();
   const bot = new Bot(botToken);
@@ -88,10 +83,6 @@ async function initBot(cusConfig: CusConfig, botToken: string) {
     });
   });
 
-  // bot.command("img_ran", imgCBGenerate());
-  // bot.command("img_ark", imgCBGenerate('arknights'));
-  // bot.command("img_artist", imgCBGenerate('artists'));
-
   bot.command("set_rating", (ctx) => {
     ctx.reply(
       `*Now rating*: _${dan.GetRating()}_\n*optional*: general, sensitive, questionable, explicit`,
@@ -114,7 +105,6 @@ async function initBot(cusConfig: CusConfig, botToken: string) {
   });
 
   bot.command("tag", async (ctx) => {
-    // `item` 将被赋值为 `apple pie` ， 如果一个用户输入了 `/add apple pie`
     const tag = ctx.match;
     const reg = /^\S+$/g;
     if (!reg.test(tag)) {
@@ -184,27 +174,19 @@ async function initBot(cusConfig: CusConfig, botToken: string) {
   return bot;
 }
 
-/**
- * @description: 以长轮询方式启动bot
- * @param {CusConfig} cusConfig 配置文件
- * @return {*}
- */
 async function startBotDevMode(cusConfig: CusConfig, botToken: string) {
   const bot = await initBot(cusConfig, botToken);
   console.log("init bot done.");
   // 确保之前设置的webhook删除，再以poll模式运行
-  // bot.api.deleteWebhook().then(res => {
-  //     bot.start();
-  //     levelLog(LogLevel.deploy, "Bot start, Mode: Polling");
-  // });
-  bot.start();
+  bot.api
+    .deleteWebhook()
+    .catch((_) => {})
+    .finally(() => {
+      bot.start();
+      levelLog(LogLevel.deploy, "Bot start, Mode: Polling");
+    });
 }
 
-/**
- * @description: 以webhook形式启动bot
- * @param {CusConfig} cusConfig 配置文件
- * @return {*}
- */
 async function startBotDeployMode(cusConfig: CusConfig, botToken: string) {
   if (cusConfig.WebHookUrl == undefined || cusConfig.ExpressPort == undefined) {
     throw new Error("Webhook config is invalid.");
