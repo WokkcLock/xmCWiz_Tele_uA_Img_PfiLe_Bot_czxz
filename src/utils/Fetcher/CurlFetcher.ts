@@ -1,13 +1,3 @@
-/*
- * @Author: nomwiz
- * @Date: 2024-03-23 12:11:13
- * @LastEditors: nomwiz nomwiz@nom.com
- * @LastEditTime: 2024-03-25 03:17:59
- * @FilePath: /ImgBot/src/utils/Fetcher/CurlFetcher.ts
- * @Description: 
- */
-
-
 import AbstractFetcher from "./Fetcher.js";
 import { isEmptyObject } from "../ToolFunc.js";
 import { exec } from "child_process";

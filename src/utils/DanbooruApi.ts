@@ -17,7 +17,7 @@ class DanbooruApi {
         this._fetcher = fetcher;
     }
 
-    static async Build() {
+    static async Create() {
         const fetcher = new CurlFetcher();
         await fetcher.Init();
         return new DanbooruApi(fetcher);

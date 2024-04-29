@@ -1,8 +1,3 @@
-type FsPayload = {
-    cmd: string,
-    [key: string]: any,
-}
-
 type DanbooruParams = {
     tags?: string,       // tags
     limit?: number,     // 限制输出的数量
@@ -12,8 +7,13 @@ type DanbooruParams = {
     page?: string | number, // id 查询或其他
 }
 
-// type Rating = 'general' | 'sensitive' | 'questionable' | 'explicit';
+type UserCacheItem = {
+    profile: UserProfile,
+    timer: NodeJS.Timeout,
+    isWrited: boolean,
+}
 
 
 
 type Rating = 'g' | 's' | 'q' | 'e';
+
