@@ -19,9 +19,9 @@ class SqlApi {
         return SqlApi.db;
     };
 
-    static async update(chatId: string, content: string) {
+    static async update(chatId: number, content: string) {
         const db = SqlApi.getInstance();
-        const hashStr = await CryptoTool.hash(chatId);
+        const hashStr = await CryptoTool.hash(chatId.toString());
         // 检测hashStr是否存在
         let stmt = db.prepare(`SELECT * FROM ${tableName} WHERE hash = ?`);
         if (stmt.get(hashStr) == undefined) {
@@ -32,9 +32,9 @@ class SqlApi {
             stmt.run(content, hashStr);
         }
     }
-    static async get(chatId: string) {
+    static async get(chatId: number) {
         const db = SqlApi.getInstance();
-        const hashStr = await CryptoTool.hash(chatId);
+        const hashStr = await CryptoTool.hash(chatId.toString());
         const stmt = db.prepare(`SELECT content FROM ${tableName} WHERE hash = ?`);
         const ret = stmt.get(hashStr) as {content: string} | undefined;
         return ret == undefined ? undefined : ret.content;

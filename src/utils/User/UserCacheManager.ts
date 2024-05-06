@@ -1,11 +1,11 @@
-import SqlApi from "./Sql/SqlApi.js";
-import  { levelLog, LogLevel } from "./LevelLog.js";
-import UserProfile from "./User/UserProfile.js";
+import SqlApi from "../Sql/SqlApi.js";
+import  { levelLog, LogLevel } from "../LevelLog.js";
+import UserProfile from "./UserProfile.js";
 
 const defaultIdleTime = 1000 * 60 * 3; // 3分钟
 
 class UserCacheManager {
-    private _cache: Map<string, UserCacheItem>;
+    private _cache: Map<number, UserCacheItem>;
     private readonly idleTime: number; // 空闲时间阈值，单位：毫秒
 
     constructor(idleTime: number = defaultIdleTime) {
@@ -13,7 +13,7 @@ class UserCacheManager {
         this._cache = new Map();
     }
 
-    private async resetTimer(chatId: string, obj: UserCacheItem) {
+    private async resetTimer(chatId: number, obj: UserCacheItem) {
         // 取消之前的定时器
         clearTimeout(obj.timer);
         obj.timer = setTimeout(() => {
@@ -27,7 +27,7 @@ class UserCacheManager {
         },this.idleTime);
     }
 
-    private async getItem(chatId: string) {
+    private async getItem(chatId: number) {
         const obj = this._cache.get(chatId);
 
         if (obj == undefined) {
@@ -63,49 +63,62 @@ class UserCacheManager {
         }
     }
 
-    async PatchTags(chatId: string, kind: string, tags: string[]) {
+    async PatchTags(chatId: number, kind: string, tags: string[]) {
         const item = await this.getItem(chatId);
         item.isWrited = true;
-        return item.profile.PatchTagKind(kind, tags);
+        item.profile.PatchTagKind(kind, tags);
     }
 
-    async AddKind(chatId: string, kind: string) {
+    async AddKind(chatId: number, kind: string) {
         const item = await this.getItem(chatId);
         item.isWrited = true;
-        return item.profile.AddTagKind(kind);
+        item.profile.AddTagKind(kind);
     }
 
-    async RemoveKind(chatId: string, kind: string) {
+    async RemoveKind(chatId: number, kind: string) {
         const item = await this.getItem(chatId);
         item.isWrited = true;
-        return item.profile.RemoveTagKind(kind);
+        item.profile.RemoveTagKind(kind);
     }
 
-    async AddTag(chatId: string, kind: string, tag: string) {
+    async AddTag(chatId: number, kind: string, tag: string) {
         const item = await this.getItem(chatId);
         item.isWrited = true;
-        return item.profile.AddTag(kind, tag);
+        item.profile.AddTag(kind, tag);
     }
 
-    async RemoveTag(chatId: string, kind: string, tag: string) {
+    async AddTags(chatId: number, kind: string, tags: string[]) {
         const item = await this.getItem(chatId);
         item.isWrited = true;
-        return item.profile.RemoveTag(kind, tag);
+        for (const tag of tags) {
+            item.profile.AddTag(kind, tag);
+        }
     }
 
-    async GetAllKinds(chatId: string) {
+    async RemoveTag(chatId: number, kind: string, tag: string) {
+        const item = await this.getItem(chatId);
+        item.isWrited = true;
+        item.profile.RemoveTag(kind, tag);
+    }
+
+    async GetAllKinds(chatId: number) {
         const item = await this.getItem(chatId);
         return item.profile.GetAllKind();
     }
 
-    async GetKindRandomTag(chatId: string, kind: string) {
+    async GetKindRandomTag(chatId: number, kind: string) {
         const item = await this.getItem(chatId);
-        return item.profile.GetRandomTagWithKind(kind);
+        return item.profile.GetKindRandomTag(kind);
     }
 
-    async GetAllRandomTag(chatId: string) {
+    async GetAllRandomTag(chatId: number) {
         const item = await this.getItem(chatId);
-        return item.profile.GetRandomTagAll();
+        return item.profile.GetAllRandomTag();
+    }
+
+    async GetKindTags(chatId: number, kind: string) {
+        const item = await this.getItem(chatId);
+        return item.profile.GetKindTags(kind);
     }
 
 }

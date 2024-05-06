@@ -3,7 +3,7 @@ import CusConfig from "./utils/CusConfig.js";
 import * as readlineSync from "readline-sync";
 import CryptoTool from "./utils/Sql/CryptoTool.js";
 import SqlApi from "./utils/Sql/SqlApi.js";
-import UserCacheManager from "./utils/UserCacheManager.js";
+import UserCacheManager from "./utils/User/UserCacheManager.js";
 
 /*
 async function main() {

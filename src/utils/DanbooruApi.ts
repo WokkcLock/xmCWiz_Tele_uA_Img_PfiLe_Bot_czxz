@@ -3,6 +3,7 @@ import CurlFetcher from "./Fetcher/CurlFetcher.js";
 import { LogLevel, levelLog } from "./LevelLog.js";
 import fs from 'fs';
 import { asyncSleep } from "./ToolFunc.js";
+import { TagFetchError } from "./User/CustomError.js";
 
 const DanbooruBaseApiUrl = 'https://danbooru.donmai.us/posts.json';
 const getLimit = 20;    // 每次请求限制
@@ -79,7 +80,7 @@ class DanbooruApi {
                     failCount++;
                     if (failCount >= 2) {
                         levelLog(LogLevel.error, `update tags:${tags}, meet the fail limit.`);
-                        throw new Error('');
+                        throw new TagFetchError(tags);
                     }
                 } else {
                     // 就算是成功也需要break

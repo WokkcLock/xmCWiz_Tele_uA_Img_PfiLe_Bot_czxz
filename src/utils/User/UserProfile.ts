@@ -1,75 +1,73 @@
 import { KindNotExistError, KindAlreadyExistError, EmptyKindError, 
-    NoKindError } from "./CustomError.js";
-
+    TagAlreadyExistError, TagNotExistError, AllHasNoTagError} 
+    from "./CustomError.js";
 
 class UserProfile {
-    private _tags: Map<string, Set<string>>;
-    private _totalTagsCount: number;
+    private _tagMap: Map<string, Set<string>>;
     constructor(contentText: string | undefined) {
         // 将contentText反序列化
         if (contentText == undefined) {
-            this._tags = new Map();
-            this._totalTagsCount = 0;
+            this._tagMap = new Map();
             return;
         }
         const obj = JSON.parse(contentText);
         // 遍历obj
-        this._tags = new Map();
-        this._totalTagsCount = 0;
+        this._tagMap = new Map();
         const tags = obj.tags;
         if (tags != undefined) {
             for (const key in tags) {
-                this._tags.set(key, new Set(tags[key] as string[]));
-                this._totalTagsCount += tags[key].length;
+                this._tagMap.set(key, new Set(tags[key] as string[]));
             }
         }
     }
 
     AddTagKind(newKind: string) {
-        if (this._tags.has(newKind)) {
+        if (this._tagMap.has(newKind)) {
             throw new KindAlreadyExistError(newKind);
         }
-        this._tags.set(newKind, new Set());
+        this._tagMap.set(newKind, new Set());
     }
 
     PatchTagKind(kind: string, tags: string[]) {
-        if (!this._tags.has(kind)) {
+        if (!this._tagMap.has(kind)) {
             throw new KindNotExistError(kind);
         }
         var newSet = new Set(tags);
-        this._totalTagsCount = this._totalTagsCount - this._tags.get(kind)!.size + newSet.size;
-        this._tags.set(kind, newSet);
+        this._tagMap.set(kind, newSet);
     }
 
     RemoveTagKind(kind: string) {
-        if (!this._tags.has(kind)) {
+        if (!this._tagMap.has(kind)) {
             throw new KindNotExistError(kind);
         }
-        this._totalTagsCount -= this._tags.get(kind)!.size;
-        this._tags.delete(kind);
+        this._tagMap.delete(kind);
     }
 
     AddTag(kind: string, tag: string) {
-        if (!this._tags.has(kind)) {
+        if (!this._tagMap.has(kind)) {
             throw new KindNotExistError(kind);
         }
-        const tagSet = this._tags.get(kind)!;
-        this._totalTagsCount++;
+        const tagSet = this._tagMap.get(kind)!;
+        if (tagSet.has(tag)) {
+            throw new TagAlreadyExistError(kind, tag);
+        }
         tagSet.add(tag);
     }
 
     RemoveTag(kind: string, tag: string) {
-        if (!this._tags.has(kind)) {
+        if (!this._tagMap.has(kind)) {
             throw new KindNotExistError(kind);
         }
-        const tagSet = this._tags.get(kind)!;
-        this._totalTagsCount--;
-        tagSet.delete(tag);
+        const tagSet = this._tagMap.get(kind)!;
+        if (tagSet.has(tag)) {
+            tagSet.delete(tag);
+        }
+        throw new TagNotExistError(kind, tag);
     }
 
 
-    GetKindRandomTag(kind: string = "") {
-        const tagSet = this._tags.get(kind);
+    GetKindRandomTag(kind: string) {
+        const tagSet = this._tagMap.get(kind);
         if (tagSet == undefined) {
             throw new KindNotExistError(kind);
         }
@@ -87,22 +85,36 @@ class UserProfile {
 
 
     GetAllRandomTag() {
-        const allKind = [...this.GetAllKind()];
+        const allKind = [] as string[];
+        for (const key of this._tagMap.keys()) {
+            if (key.length > 0) {
+                allKind.push(key);
+            }
+        }
         if (allKind.length == 0) {
-            throw new NoKindError();
+            throw new AllHasNoTagError();
         }
         const randomIndex = Math.floor(Math.random() * allKind.length);
-        return this.GetKindRandomTag(allKind[randomIndex]);
+        const kind = allKind[randomIndex];
+        return [kind, this.GetKindRandomTag(kind)];
     }
     
 
     GetAllKind() {
-        return this._tags.keys();
+        return this._tagMap.keys();
+    }
+
+    GetKindTags(kind: string) {
+        const tagSet = this._tagMap.get(kind);
+        if (tagSet == undefined) {
+            throw new KindNotExistError(kind);
+        }
+        return [...tagSet];
     }
 
     GetJsonText() {
         let obj = Object.create(null);
-        for (const [k, v] of this._tags) {
+        for (const [k, v] of this._tagMap) {
             obj[k] = Array.from(v);
         }
         return JSON.stringify({

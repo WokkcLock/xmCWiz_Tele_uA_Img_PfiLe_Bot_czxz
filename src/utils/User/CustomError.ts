@@ -19,12 +19,33 @@ export class EmptyKindError extends Error {
     }
 }
 
-export class NoKindError extends Error {
-    constructor() {
-        super(`No kind`);
-        this.name = "NoKindError";
-    }
 
+export class TagNotExistError extends Error {
+    constructor(kind: string, tag: string) {
+        super(`Tag ${tag} does not exist in kind ${kind}`);
+        this.name = "TagNotExistError";
+    } 
+}
+
+export class TagAlreadyExistError extends Error {
+    constructor(kind: string, tag: string) {
+        super(`Tag ${tag} already exist in kind ${kind}`);
+        this.name = "TagAlreadyExistError";
+    }
+}
+
+export class TagFetchError extends Error {
+    constructor(tag: string) {
+        super(`Tag ${tag} fetch error`);
+        this.name = "TagFetchError";
+    }
+}
+
+export class AllHasNoTagError extends Error {
+    constructor() {
+        super(`All kind has no tags`);
+        this.name = "AllHasNoTagError";
+    }
 }
 
 // 设计上不会发生的错误，仅仅只是为了骗过编译器
