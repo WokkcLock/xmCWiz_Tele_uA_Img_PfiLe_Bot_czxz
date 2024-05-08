@@ -6,6 +6,7 @@ import { formatMarkDownStr } from "../utils/ToolFunc.js";
 import MDecorator from "./MDecorator.js";
 import { AllHasNoTagError, TagFetchError } from "../utils/User/CustomError.js";
 import { cvNames } from "./CusCv.js";
+import { ReservedApi } from "./ReservedWord.js";
 
 class CommandMw {
     private _ucMan: UserCacheManager;
@@ -83,9 +84,23 @@ class CommandMw {
         }
     }
 
-    async ListKind(ctx: CommandContext<CusContext>) {
+    async ListKinds(ctx: CommandContext<CusContext>) {
         const kinds = await this._ucMan.GetAllKinds(ctx.chat.id);
         ctx.reply(`*All kinds*: _${formatMarkDownStr([...kinds].join(", "))}_`, {
+            parse_mode: "MarkdownV2",
+        });
+    }
+
+    async ListKindTags(ctx: CommandContext<CusContext>) {
+        const kind = ctx.match;
+        if (kind === "") {
+            ctx.reply("*Please input the param: kind name*", {
+                parse_mode: "MarkdownV2",
+            });
+            return;
+        }
+        const tags = await this._ucMan.GetKindTags(ctx.chat.id, kind);
+        ctx.reply(`*Kind*: _${kind}_\n*Tags*: _${formatMarkDownStr([...tags].join(", "))}_`, {
             parse_mode: "MarkdownV2",
         });
     }
@@ -99,12 +114,16 @@ class CommandMw {
             });
             return;
         }
-        ctx.session.tagKind = kind; 
-        await ctx.conversation.enter(cvNames.addTag);
-        // await this._ucMan.AddKind(ctx.chat.id, kind);
-        // ctx.reply(`*Add kind*: _${kind}_`, {
-        //     parse_mode: "MarkdownV2",
-        // });
+        if (ReservedApi.isReservedWord(kind)) {
+            ctx.reply(`*Can't use word ${kind}, because it's a reserve word, please change*`, {
+                parse_mode: "MarkdownV2",
+            });
+            return;
+        }
+        await this._ucMan.AddKind(ctx.chat.id, kind);
+        ctx.reply(`*Add kind*: _${kind}_`, {
+            parse_mode: "MarkdownV2",
+        });
     }
 
     @MDecorator.CusErrHanlde
@@ -122,35 +141,52 @@ class CommandMw {
         });
     }
 
-
     @MDecorator.CusErrHanlde
-    async AddTag(ctx: CommandContext<CusContext>) {
-        const [kind, tag] = ctx.match.split(" ");
-        if (kind === "" || tag === "") {
-            ctx.reply("*Please input kind and tag*", {
+    async PatchKind(ctx: CommandContext<CusContext>) {
+        const kind = ctx.match;
+        if (kind === "") {
+            ctx.reply("*Please input kind*", {
                 parse_mode: "MarkdownV2",
             });
             return;
         }
-        await this._ucMan.AddTag(ctx.chat.id, kind, tag);
-        ctx.reply(`*Add tag*: _${tag}_ to *${kind}*`, {
-            parse_mode: "MarkdownV2",
-        });
+        ctx.session.tagKind = kind;
+        await ctx.conversation.enter(cvNames.patchKind);
+    }
+
+
+    @MDecorator.CusErrHanlde
+    async AddTags(ctx: CommandContext<CusContext>) {
+        const kind = ctx.match;
+        if (kind === "") {
+            ctx.reply("*Please input the param kind *", {
+                parse_mode: "MarkdownV2",
+            });
+            return;
+        }
+        ctx.session.tagKind = kind;
+        await ctx.conversation.enter(cvNames.addTags);
+        // await this._ucMan.AddTag(ctx.chat.id, kind, tag);
+        // ctx.reply(`*Add tag*: _${tag}_ to *${kind}*`, {
+        //     parse_mode: "MarkdownV2",
+        // });
     }
 
     @MDecorator.CusErrHanlde
-    async RemoveTag(ctx: CommandContext<CusContext>) {
-        const [kind, tag] = ctx.match.split(" ");
-        if (kind === "" || tag === "") {
-            ctx.reply("*Please input kind and tag*", {
+    async RemoveTags(ctx: CommandContext<CusContext>) {
+        const kind = ctx.match;
+        if (kind === "") {
+            ctx.reply("*Please input the param: kind*", {
                 parse_mode: "MarkdownV2",
             });
             return;
         }
-        await this._ucMan.RemoveTag(ctx.chat.id, kind, tag);
-        ctx.reply(`*Remove tag*: _${tag}_ from *${kind}*`, {
-            parse_mode: "MarkdownV2",
-        });
+        ctx.session.tagKind = kind;
+        await ctx.conversation.enter(cvNames.rmTags);
+        // await this._ucMan.RemoveTag(ctx.chat.id, kind, tag);
+        // ctx.reply(`*Remove tag*: _${tag}_ from *${kind}*`, {
+        //     parse_mode: "MarkdownV2",
+        // });
     }
 
     @MDecorator.CusErrHanlde
@@ -180,7 +216,7 @@ class CommandMw {
         } catch (err: any) {
             if (err instanceof TagFetchError) {
                 // tags达到请求失败上限，删除
-                await this._ucMan.RemoveTag(ctx.chat.id, kind!, tags!);
+                await this._ucMan.RmTags(ctx.chat.id, kind!, [tags!]);
                 ctx.reply(`Kind: *${formatMarkDownStr(kind!)}*, Tag: _${formatMarkDownStr(tags!)}_, 
                     meet the fetch fail limit, Remove tag. Restart the random command, please wait.`, {
                     parse_mode: "MarkdownV2",
@@ -201,5 +237,6 @@ class CommandMw {
             parse_mode: "MarkdownV2",
         });
     }
-
 }
+
+export default CommandMw;

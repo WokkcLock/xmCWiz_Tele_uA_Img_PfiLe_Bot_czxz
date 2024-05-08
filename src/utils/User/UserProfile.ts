@@ -28,7 +28,7 @@ class UserProfile {
         this._tagMap.set(newKind, new Set());
     }
 
-    PatchTagKind(kind: string, tags: string[]) {
+    PatchKind(kind: string, tags: string[]) {
         if (!this._tagMap.has(kind)) {
             throw new KindNotExistError(kind);
         }
@@ -43,27 +43,35 @@ class UserProfile {
         this._tagMap.delete(kind);
     }
 
-    AddTag(kind: string, tag: string) {
+    AddTags(kind: string, tags: string[]) {
         if (!this._tagMap.has(kind)) {
             throw new KindNotExistError(kind);
         }
         const tagSet = this._tagMap.get(kind)!;
-        if (tagSet.has(tag)) {
-            throw new TagAlreadyExistError(kind, tag);
-        }
-        tagSet.add(tag);
+        const ret = [] as string[];
+        for (const tag of tags) {
+            if (!tagSet.has(tag)) {
+                tagSet.add(tag);
+                ret.push(tag);
+            }
+        } 
+        return ret;
     }
-
-    RemoveTag(kind: string, tag: string) {
+    RmTags(kind: string, tags: string[]) {
         if (!this._tagMap.has(kind)) {
             throw new KindNotExistError(kind);
         }
         const tagSet = this._tagMap.get(kind)!;
-        if (tagSet.has(tag)) {
-            tagSet.delete(tag);
+        const ret = [] as string[];
+        for (const tag of tags) {
+            if (tagSet.has(tag)) {
+                tagSet.delete(tag);
+                ret.push(tag);
+            }
         }
-        throw new TagNotExistError(kind, tag);
+        return ret;
     }
+    
 
 
     GetKindRandomTag(kind: string) {

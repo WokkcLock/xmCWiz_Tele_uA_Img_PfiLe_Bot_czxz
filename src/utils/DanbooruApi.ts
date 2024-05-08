@@ -124,6 +124,7 @@ class DanbooruApi {
             case 'e':
                 return  'explicit';      
         }
+        return undefined;
     }
 
     DisableRating() {

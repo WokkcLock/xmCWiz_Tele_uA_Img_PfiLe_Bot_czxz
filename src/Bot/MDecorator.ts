@@ -17,8 +17,6 @@ class MDecorator {
                     case KindAlreadyExistError:
                     case EmptyKindError:
                     case AllHasNoTagError:
-                    case TagNotExistError:
-                    case TagAlreadyExistError:
                         ctx.reply(`ActionFail: ${err.message}`);
                         break;
                     default:

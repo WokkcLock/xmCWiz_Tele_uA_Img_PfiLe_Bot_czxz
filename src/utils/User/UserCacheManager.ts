@@ -63,10 +63,10 @@ class UserCacheManager {
         }
     }
 
-    async PatchTags(chatId: number, kind: string, tags: string[]) {
+    async PatchKind(chatId: number, kind: string, tags: string[]) {
         const item = await this.getItem(chatId);
         item.isWrited = true;
-        item.profile.PatchTagKind(kind, tags);
+        item.profile.PatchKind(kind, tags);
     }
 
     async AddKind(chatId: number, kind: string) {
@@ -81,24 +81,16 @@ class UserCacheManager {
         item.profile.RemoveTagKind(kind);
     }
 
-    async AddTag(chatId: number, kind: string, tag: string) {
-        const item = await this.getItem(chatId);
-        item.isWrited = true;
-        item.profile.AddTag(kind, tag);
-    }
-
     async AddTags(chatId: number, kind: string, tags: string[]) {
         const item = await this.getItem(chatId);
         item.isWrited = true;
-        for (const tag of tags) {
-            item.profile.AddTag(kind, tag);
-        }
+        return item.profile.AddTags(kind, tags);
     }
 
-    async RemoveTag(chatId: number, kind: string, tag: string) {
+    async RmTags(chatId: number, kind: string, tags: string[]) {
         const item = await this.getItem(chatId);
         item.isWrited = true;
-        item.profile.RemoveTag(kind, tag);
+        return item.profile.RmTags(kind, tags);
     }
 
     async GetAllKinds(chatId: number) {
