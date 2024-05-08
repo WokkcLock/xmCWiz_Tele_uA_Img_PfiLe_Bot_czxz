@@ -24,22 +24,22 @@ async function initBot(botToken: string) {
     bot.use(conversations());
 
     // 安装对话
-    bot.use(createConversation(cvFunc.AddTags, cvNames.addTags));
-    bot.use(createConversation(cvFunc.RmTags, cvNames.rmTags));
-    bot.use(createConversation(cvFunc.PatchKind, cvNames.patchKind));
+    bot.use(createConversation(cvFunc.AddTags.bind(cvFunc), cvNames.addTags));
+    bot.use(createConversation(cvFunc.RmTags.bind(cvFunc), cvNames.rmTags));
+    bot.use(createConversation(cvFunc.PatchKind.bind(cvFunc), cvNames.patchKind));
 
     // 安装中间件
-    bot.command("add_tags", commandMw.AddTags);
-    bot.command("rm_tags", commandMw.RemoveTags);
-    bot.command("random", commandMw.Random);
-    bot.command("add_kind", commandMw.AddKind);
-    bot.command("rm_kind", commandMw.RemoveKind);
-    bot.command("patch_kind", commandMw.PatchKind);
-    bot.command("list_kinds", commandMw.ListKinds);
-    bot.command("list_tags", commandMw.ListKindTags);
-    bot.command("tag", commandMw.Tag);
-    bot.command("id", commandMw.Id);
-    bot.command("start", commandMw.Start);
+    bot.command("add_tags", commandMw.AddTags.bind(commandMw));
+    bot.command("rm_tags", commandMw.RemoveTags.bind(commandMw));
+    bot.command("random", commandMw.Random.bind(commandMw));
+    bot.command("add_kind", commandMw.AddKind.bind(commandMw));
+    bot.command("rm_kind", commandMw.RemoveKind.bind(commandMw));
+    bot.command("patch_kind", commandMw.PatchKind.bind(commandMw));
+    bot.command("list_kinds", commandMw.ListKinds.bind(commandMw));
+    bot.command("list_tags", commandMw.ListKindTags.bind(commandMw));
+    bot.command("tag", commandMw.Tag.bind(commandMw));
+    bot.command("id", commandMw.Id.bind(commandMw));
+    bot.command("start", commandMw.Start.bind(commandMw));
 
     // menu插件相关
     const setRatingMenu = new Menu<CusContext>("set_rating")

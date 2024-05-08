@@ -1,4 +1,4 @@
-import { CommandContext, Context, InputFile } from "grammy";
+import { CommandContext, InputFile } from "grammy";
 import UserCacheManager from "../utils/User/UserCacheManager.js";
 import DanbooruApi from "../utils/DanbooruApi.js";
 import { LogLevel, levelLog } from "../utils/LevelLog.js";
@@ -14,7 +14,11 @@ class CommandMw {
     constructor(inputCacheManager: UserCacheManager, inputDanbooruApi: DanbooruApi) {
         this._ucMan = inputCacheManager;
         this._dan = inputDanbooruApi;
-
+        if (this._ucMan == undefined || this._dan == undefined) {
+            console.log("something wrong");
+        } else {
+            console.log("all right");
+        }
     }
 
     // command处理
