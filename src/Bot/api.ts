@@ -1,11 +1,10 @@
-import { Bot, session, CommandContext } from "grammy";
+import { Bot, session } from "grammy";
 import DanbooruApi from "../utils/DanbooruApi.js";
 import UserCacheManager from "../utils/User/UserCacheManager.js";
-import { createConversation } from "@grammyjs/conversations";
+import { createConversation, conversations } from "@grammyjs/conversations";
 import { CusCvClass, cvNames } from "./CusCv.js";
 import CommandMw from "./Middleware.js";
 import { Menu } from "@grammyjs/menu";
-
 
 async function initBot(botToken: string) {
     const bot = new Bot<CusContext>(botToken);
@@ -15,11 +14,16 @@ async function initBot(botToken: string) {
     const commandMw = new CommandMw(ucMan, dan);
 
     // 安装会话插件
-    bot.use(session({
-        initial: () => ({ tagKind: "" }),
-    }));
+    bot.use(
+        session({
+            initial: () => ({ tagKind: "" }),
+        }),
+    );
 
     // 安装对话插件
+    bot.use(conversations());
+
+    // 安装对话
     bot.use(createConversation(cvFunc.AddTags, cvNames.addTags));
     bot.use(createConversation(cvFunc.RmTags, cvNames.rmTags));
     bot.use(createConversation(cvFunc.PatchKind, cvNames.patchKind));
@@ -35,27 +39,28 @@ async function initBot(botToken: string) {
     bot.command("list_tags", commandMw.ListKindTags);
     bot.command("tag", commandMw.Tag);
     bot.command("id", commandMw.Id);
+    bot.command("start", commandMw.Start);
 
     // menu插件相关
     const setRatingMenu = new Menu<CusContext>("set_rating")
-        .text("general", ctx => {
-            dan.SetRating("g")
+        .text("general", (ctx) => {
+            dan.SetRating("g");
             ctx.reply("set rating to general");
         })
-        .text("sensitive", ctx => {
-            dan.SetRating("s")
+        .text("sensitive", (ctx) => {
+            dan.SetRating("s");
             ctx.reply("set rating to sensitive");
         })
-        .text("questionable", ctx => {
-            dan.SetRating("q")
+        .text("questionable", (ctx) => {
+            dan.SetRating("q");
             ctx.reply("set rating to questionable");
         })
         .row()
-        .text("explicit", ctx => {
-            dan.SetRating("e")
+        .text("explicit", (ctx) => {
+            dan.SetRating("e");
             ctx.reply("set rating to explicit");
         })
-        .text("disable", ctx => {
+        .text("disable", (ctx) => {
             dan.DisableRating();
             ctx.reply("rating has been disabled");
         });
@@ -66,16 +71,12 @@ async function initBot(botToken: string) {
         if (nowRating == undefined) {
             nowRating = "disabled";
         }
-        await ctx.reply(`*Now rating*: _${nowRating}_\n`,
-            {
-                reply_markup: setRatingMenu,
-                parse_mode: "MarkdownV2",
-            }
-        );
-
-    })
+        await ctx.reply(`*Now rating*: _${nowRating}_\n`, {
+            reply_markup: setRatingMenu,
+            parse_mode: "MarkdownV2",
+        });
+    });
     return bot;
-
 }
 
 export { initBot };

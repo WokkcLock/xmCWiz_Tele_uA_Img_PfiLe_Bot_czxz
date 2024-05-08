@@ -233,9 +233,7 @@ class CommandMw {
     }
 
     Start(ctx: CommandContext<CusContext>) {
-        ctx.reply(`*Welcome to img bot*\n*Usage*: \n/tag <tag>\n/id <id>\n/rating`, {
-            parse_mode: "MarkdownV2",
-        });
+        ctx.reply(`*Welcome to img bot*\n*Usage*: \n/tag <tag>\n/id <id>\n/rating`);
     }
 }
 
