@@ -1,6 +1,11 @@
-import { KindNotExistError, KindAlreadyExistError, EmptyKindError, 
-    TagAlreadyExistError, TagNotExistError, AllHasNoTagError} 
-    from "./CustomError.js";
+import {
+    KindNotExistError,
+    KindAlreadyExistError,
+    EmptyKindError,
+    TagAlreadyExistError,
+    TagNotExistError,
+    AllHasNoTagError,
+} from "./CustomError.js";
 
 class UserProfile {
     private _tagMap: Map<string, Set<string>>;
@@ -54,7 +59,7 @@ class UserProfile {
                 tagSet.add(tag);
                 ret.push(tag);
             }
-        } 
+        }
         return ret;
     }
     RmTags(kind: string, tags: string[]) {
@@ -71,8 +76,6 @@ class UserProfile {
         }
         return ret;
     }
-    
-
 
     GetKindRandomTag(kind: string) {
         const tagSet = this._tagMap.get(kind);
@@ -88,9 +91,8 @@ class UserProfile {
             i++;
         }
         // kind内没有tag
-        throw new EmptyKindError(kind); 
+        throw new EmptyKindError(kind);
     }
-
 
     GetAllRandomTag() {
         const allKind = [] as string[];
@@ -106,10 +108,9 @@ class UserProfile {
         const kind = allKind[randomIndex];
         return [kind, this.GetKindRandomTag(kind)];
     }
-    
 
     GetAllKind() {
-        return this._tagMap.keys();
+        return [...this._tagMap.keys()];
     }
 
     GetKindTags(kind: string) {
@@ -126,7 +127,7 @@ class UserProfile {
             obj[k] = Array.from(v);
         }
         return JSON.stringify({
-            tags: obj
+            tags: obj,
         });
     }
 }

@@ -8,7 +8,7 @@ import {
 import CusConfig from "./utils/CusConfig.js";
 import DanbooruApi from "./utils/DanbooruApi.js";
 import { LogLevel, levelLog } from "./utils/LevelLog.js";
-import { formatMarkDownStr } from "./utils/ToolFunc.js";
+import { formatMdStr } from "./utils/ToolFunc.js";
 
 async function initBot(cusConfig: CusConfig, botToken: string) {
   const dan = await DanbooruApi.Create();
@@ -23,7 +23,7 @@ async function initBot(cusConfig: CusConfig, botToken: string) {
         const tag = cusConfig.GetRandomTag(tagKind);
         const ret = await dan.GetImageFromTags(tag);
         await ctx.replyWithPhoto(new InputFile(ret.data), {
-          caption: `\n*image id*: _${ret.id}_\n*tags*: _${formatMarkDownStr(tag)}_\n[file\\_url](${formatMarkDownStr(ret.source_url)})`,
+          caption: `\n*image id*: _${ret.id}_\n*tags*: _${formatMdStr(tag)}_\n[file\\_url](${formatMdStr(ret.source_url)})`,
           // tag中可能带有 ( ) _这三个符号，会导致markdown parse失败，要转义
           parse_mode: "MarkdownV2",
         });
@@ -53,7 +53,7 @@ async function initBot(cusConfig: CusConfig, botToken: string) {
   commandsMap.set("`/img_ran`", { help: "random image" });
   for (const kind of cusConfig.GetTagsKind()) {
     commandsMap.set(`\`/${kind}\``, {
-      help: `random ${formatMarkDownStr(kind)} tags image`,
+      help: `random ${formatMdStr(kind)} tags image`,
     });
     bot.command(kind, imgCBGenerate(kind));
   }
@@ -116,7 +116,7 @@ async function initBot(cusConfig: CusConfig, botToken: string) {
     try {
       const ret = await dan.GetImageFromTags(tag);
       await ctx.replyWithPhoto(new InputFile(ret.data), {
-        caption: `\n*image id*: _${ret.id}_\n*tags*: _${formatMarkDownStr(tag)}_\n${formatMarkDownStr(ret.source_url)}`,
+        caption: `\n*image id*: _${ret.id}_\n*tags*: _${formatMdStr(tag)}_\n${formatMdStr(ret.source_url)}`,
         parse_mode: "MarkdownV2",
       });
     } catch (err) {

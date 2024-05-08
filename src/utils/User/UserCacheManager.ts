@@ -1,5 +1,5 @@
 import SqlApi from "../Sql/SqlApi.js";
-import  { levelLog, LogLevel } from "../LevelLog.js";
+import { levelLog, LogLevel } from "../LevelLog.js";
 import UserProfile from "./UserProfile.js";
 
 const defaultIdleTime = 1000 * 60 * 3; // 3分钟
@@ -19,12 +19,11 @@ class UserCacheManager {
         obj.timer = setTimeout(() => {
             if (obj.isWrited) {
                 levelLog(LogLevel.debug, `UserCache: update chatId: ${chatId}`);
-                SqlApi.update(chatId,
-                    obj.profile.GetJsonText());
+                SqlApi.update(chatId, obj.profile.GetJsonText());
             }
             levelLog(LogLevel.debug, `UserCache: delete chatId: ${chatId}`);
             this._cache.delete(chatId);
-        },this.idleTime);
+        }, this.idleTime);
     }
 
     private async getItem(chatId: number) {
@@ -42,22 +41,20 @@ class UserCacheManager {
                 isWrited: contentJsonText == undefined,
             });
             levelLog(LogLevel.debug, `UserCache: add chatId: ${chatId}`);
-        }
-        else {
+        } else {
             await this.resetTimer(chatId, obj);
         }
         return this._cache.get(chatId)!;
     }
 
-    async DumpAllBeforeShutdown() 
-    {
+    async DumpAllBeforeShutdown() {
         // 遍历 _cache
+        levelLog(LogLevel.debug, "dump cache to sql before shutdown");
         for (const [_, value] of this._cache) {
             clearTimeout(value.timer);
         }
         for (const [key, value] of this._cache) {
             if (value.isWrited) {
-                console.log("is writed");
                 await SqlApi.update(key, value.profile.GetJsonText());
             }
         }
@@ -112,7 +109,6 @@ class UserCacheManager {
         const item = await this.getItem(chatId);
         return item.profile.GetKindTags(kind);
     }
-
 }
 
 export default UserCacheManager;

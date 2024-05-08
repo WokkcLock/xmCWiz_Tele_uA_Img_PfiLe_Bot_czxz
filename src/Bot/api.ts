@@ -6,10 +6,14 @@ import { CusCvClass, cvNames } from "./CusCv.js";
 import CommandMw from "./Middleware.js";
 import { Menu } from "@grammyjs/menu";
 
-async function initBot(botToken: string) {
+async function initBot(
+    botToken: string,
+    dan: DanbooruApi,
+    ucMan: UserCacheManager,
+) {
     const bot = new Bot<CusContext>(botToken);
-    const dan = await DanbooruApi.Create();
-    const ucMan = new UserCacheManager();
+    // const dan = await DanbooruApi.Create();
+    // const ucMan = new UserCacheManager();
     const cvFunc = new CusCvClass(ucMan);
     const commandMw = new CommandMw(ucMan, dan);
 
@@ -26,7 +30,9 @@ async function initBot(botToken: string) {
     // 安装对话
     bot.use(createConversation(cvFunc.AddTags.bind(cvFunc), cvNames.addTags));
     bot.use(createConversation(cvFunc.RmTags.bind(cvFunc), cvNames.rmTags));
-    bot.use(createConversation(cvFunc.PatchKind.bind(cvFunc), cvNames.patchKind));
+    bot.use(
+        createConversation(cvFunc.PatchKind.bind(cvFunc), cvNames.patchKind),
+    );
 
     // 安装中间件
     bot.command("add_tags", commandMw.AddTags.bind(commandMw));

@@ -2,7 +2,7 @@ import { CommandContext, InputFile } from "grammy";
 import UserCacheManager from "../utils/User/UserCacheManager.js";
 import DanbooruApi from "../utils/DanbooruApi.js";
 import { LogLevel, levelLog } from "../utils/LevelLog.js";
-import { formatMarkDownStr } from "../utils/ToolFunc.js";
+import { formatMdStr } from "../utils/ToolFunc.js";
 import MDecorator from "./MDecorator.js";
 import { AllHasNoTagError, TagFetchError } from "../utils/User/CustomError.js";
 import { cvNames } from "./CusCv.js";
@@ -11,14 +11,12 @@ import { ReservedApi } from "./ReservedWord.js";
 class CommandMw {
     private _ucMan: UserCacheManager;
     private _dan: DanbooruApi;
-    constructor(inputCacheManager: UserCacheManager, inputDanbooruApi: DanbooruApi) {
+    constructor(
+        inputCacheManager: UserCacheManager,
+        inputDanbooruApi: DanbooruApi,
+    ) {
         this._ucMan = inputCacheManager;
         this._dan = inputDanbooruApi;
-        if (this._ucMan == undefined || this._dan == undefined) {
-            console.log("something wrong");
-        } else {
-            console.log("all right");
-        }
     }
 
     // command处理
@@ -31,7 +29,10 @@ class CommandMw {
                         [
                             { text: "general", callback_data: "general" },
                             { text: "sensitive", callback_data: "sensitive" },
-                            { text: "questionable", callback_data: "questionable" },
+                            {
+                                text: "questionable",
+                                callback_data: "questionable",
+                            },
                             { text: "explicit", callback_data: "explicit" },
                             { text: "disable", callback_data: "disable" },
                         ],
@@ -55,11 +56,9 @@ class CommandMw {
 
         try {
             const ret = await this._dan.GetImageFromId(parseInt(id));
-            await ctx.replyWithPhoto(
-                new InputFile(ret.data),
-                {
-                    caption: ret.source_url,
-                });
+            await ctx.replyWithPhoto(new InputFile(ret.data), {
+                caption: ret.source_url,
+            });
         } catch (err) {
             levelLog(LogLevel.error, err);
             ctx.reply(`image id: ${id}, fetch fail`);
@@ -79,7 +78,7 @@ class CommandMw {
         try {
             const ret = await this._dan.GetImageFromTags(tag);
             await ctx.replyWithPhoto(new InputFile(ret.data), {
-                caption: `\n*image id*: _${ret.id}_\n*tags*: _${formatMarkDownStr(tag)}_\n${formatMarkDownStr(ret.source_url)}`,
+                caption: `\n*image id*: _${ret.id}_\n*tags*: _${formatMdStr(tag)}_\n${formatMdStr(ret.source_url)}`,
                 parse_mode: "MarkdownV2",
             });
         } catch (err) {
@@ -90,9 +89,15 @@ class CommandMw {
 
     async ListKinds(ctx: CommandContext<CusContext>) {
         const kinds = await this._ucMan.GetAllKinds(ctx.chat.id);
-        ctx.reply(`*All kinds*: _${formatMarkDownStr([...kinds].join(", "))}_`, {
-            parse_mode: "MarkdownV2",
-        });
+        if (kinds.length == 0) {
+            ctx.reply(
+                "there is still no kind, please use /add_kind to add a kind",
+            );
+        } else {
+            ctx.reply(`_${formatMdStr(kinds.join(", "))}_`, {
+                parse_mode: "MarkdownV2",
+            });
+        }
     }
 
     async ListKindTags(ctx: CommandContext<CusContext>) {
@@ -104,9 +109,12 @@ class CommandMw {
             return;
         }
         const tags = await this._ucMan.GetKindTags(ctx.chat.id, kind);
-        ctx.reply(`*Kind*: _${kind}_\n*Tags*: _${formatMarkDownStr([...tags].join(", "))}_`, {
-            parse_mode: "MarkdownV2",
-        });
+        ctx.reply(
+            `*Kind*: \_${kind}\_\n*Tags*: ${formatMdStr(tags.join(", "))}`,
+            {
+                parse_mode: "MarkdownV2",
+            },
+        );
     }
 
     @MDecorator.CusErrHanlde
@@ -119,13 +127,16 @@ class CommandMw {
             return;
         }
         if (ReservedApi.isReservedWord(kind)) {
-            ctx.reply(`*Can't use word ${kind}, because it's a reserve word, please change*`, {
-                parse_mode: "MarkdownV2",
-            });
+            ctx.reply(
+                `*Can't use word ${formatMdStr(kind)}, because it's a reserve word, please change*`,
+                {
+                    parse_mode: "MarkdownV2",
+                },
+            );
             return;
         }
         await this._ucMan.AddKind(ctx.chat.id, kind);
-        ctx.reply(`*Add kind*: _${kind}_`, {
+        ctx.reply(`*Add kind*: _${formatMdStr(kind)}_`, {
             parse_mode: "MarkdownV2",
         });
     }
@@ -157,7 +168,6 @@ class CommandMw {
         ctx.session.tagKind = kind;
         await ctx.conversation.enter(cvNames.patchKind);
     }
-
 
     @MDecorator.CusErrHanlde
     async AddTags(ctx: CommandContext<CusContext>) {
@@ -203,7 +213,7 @@ class CommandMw {
                 [kind, tags] = await this._ucMan.GetAllRandomTag(ctx.chat.id);
                 const ret = await this._dan.GetImageFromTags(tags);
                 await ctx.replyWithPhoto(new InputFile(ret.data), {
-                    caption: `\n*image id*: _${ret.id}_\n*tags*: _${formatMarkDownStr(tags)}_\n${formatMarkDownStr(ret.source_url)}`,
+                    caption: `\n*image id*: _${ret.id}_\n*tags*: _${formatMdStr(tags)}_\n${formatMdStr(ret.source_url)}`,
                     parse_mode: "MarkdownV2",
                 });
                 return;
@@ -214,30 +224,35 @@ class CommandMw {
 
             const ret = await this._dan.GetImageFromTags(tags);
             await ctx.replyWithPhoto(new InputFile(ret.data), {
-                caption: `\n*image id*: _${ret.id}_\n*tags*: _${formatMarkDownStr(tags)}_\n${formatMarkDownStr(ret.source_url)}`,
+                caption: `\n*image id*: _${ret.id}_\n*tags*: _${formatMdStr(tags)}_\n${formatMdStr(ret.source_url)}`,
                 parse_mode: "MarkdownV2",
             });
         } catch (err: any) {
             if (err instanceof TagFetchError) {
                 // tags达到请求失败上限，删除
                 await this._ucMan.RmTags(ctx.chat.id, kind!, [tags!]);
-                ctx.reply(`Kind: *${formatMarkDownStr(kind!)}*, Tag: _${formatMarkDownStr(tags!)}_, 
-                    meet the fetch fail limit, Remove tag. Restart the random command, please wait.`, {
-                    parse_mode: "MarkdownV2",
-                });
+                ctx.reply(
+                    `Kind: *${formatMdStr(kind!)}*, Tag: _${formatMdStr(tags!)}_, 
+                    meet the fetch fail limit, Remove tag. Restart the random command, please wait.`,
+                    {
+                        parse_mode: "MarkdownV2",
+                    },
+                );
                 await this.Random(ctx);
             } else if (err instanceof AllHasNoTagError) {
                 ctx.reply(`All kind has no tags, please add tag first.`);
                 return;
-            }
-            else {
+            } else {
                 throw err;
             }
         }
     }
 
     Start(ctx: CommandContext<CusContext>) {
-        ctx.reply(`*Welcome to img bot*\n*Usage*: \n/tag <tag>\n/id <id>\n/rating`);
+        // ctx.reply(
+        //     `*Welcome to img bot*\n*Usage*: \n/tag <tag>\n/id <id>\n/rating`,
+        // );
+        ctx.reply(`your id: ${ctx.chat.id}`);
     }
 }
 
