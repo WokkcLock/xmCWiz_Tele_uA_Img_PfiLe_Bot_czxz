@@ -1,17 +1,19 @@
 import AbstractFetcher from "./Fetcher/Fetcher.js";
 import CurlFetcher from "./Fetcher/CurlFetcher.js";
 import { LogLevel, levelLog } from "./LevelLog.js";
-import fs from 'fs';
 import { asyncSleep } from "./ToolFunc.js";
 import { TagFetchError } from "./User/CustomError.js";
 
-const DanbooruBaseApiUrl = 'https://danbooru.donmai.us/posts.json';
-const getLimit = 20;    // 每次请求限制
+const DanbooruBaseApiUrl = "https://danbooru.donmai.us/posts.json";
+const getLimit = 20; // 每次请求限制
 
 class DanbooruApi {
     private _fetcher: AbstractFetcher;
-    private _authObj: { login: string, api_key: string } | undefined;
-    private _tagsUrlCache = new Map<string, { url: string, ext: string, id: number, source_url: string }[]>();
+    private _authObj: { login: string; api_key: string } | undefined;
+    private _tagsUrlCache = new Map<
+        string,
+        { url: string; ext: string; id: number; source_url: string }[]
+    >();
     private _rating: Rating | undefined;
 
     private constructor(fetcher: AbstractFetcher) {
@@ -25,7 +27,7 @@ class DanbooruApi {
     }
 
     private async getImg(url: string) {
-        return (await this._fetcher.GetByteFile(url));
+        return await this._fetcher.GetByteFile(url);
     }
 
     private async fetchDanbooruApi(params: DanbooruParams) {
@@ -33,7 +35,6 @@ class DanbooruApi {
     }
 
     private async updateTagsMap(tagsWithRating: string) {
-
         const params: DanbooruParams = {
             tags: `${tagsWithRating} random:${getLimit}`,
             // random: true,
@@ -45,20 +46,30 @@ class DanbooruApi {
             params.api_key = this._authObj.api_key;
         }
         levelLog(LogLevel.deploy, `Tags: ${params.tags}, Update map.`);
-        const res = await this.fetchDanbooruApi(params) as { [key: string]: any }[];
-        const dataList = [] as { url: string, ext: string, id: number, source_url: string }[];
+        const res = (await this.fetchDanbooruApi(params)) as {
+            [key: string]: any;
+        }[];
+        const dataList = [] as {
+            url: string;
+            ext: string;
+            id: number;
+            source_url: string;
+        }[];
         for (const item of res) {
             try {
                 dataList.push({
                     id: item.id,
-                    url: item.media_asset.variants[3].url,  // url
+                    url: item.media_asset.variants[3].url, // url
                     ext: item.media_asset.variants[3].file_ext,
-                    source_url: item.file_url      // 源图链接
-                })
+                    source_url: item.file_url, // 源图链接
+                });
             } catch (err) {
                 //* 有可能会失败，但是不管
-                levelLog(LogLevel.warn, `id: ${item.id} media_asset.variants fail.`);   // 一般来说是fail.
-                fs.appendFileSync('Dan_er.json', JSON.stringify(item));
+                levelLog(
+                    LogLevel.warn,
+                    `id: ${item.id} media_asset.variants fail.`,
+                ); // 一般来说是fail.
+                // fs.appendFileSync('Dan_er.json', JSON.stringify(item));
                 continue;
             }
         }
@@ -79,7 +90,10 @@ class DanbooruApi {
                 if (cacheList.length <= 0) {
                     failCount++;
                     if (failCount >= 2) {
-                        levelLog(LogLevel.error, `update tags:${tags}, meet the fail limit.`);
+                        levelLog(
+                            LogLevel.error,
+                            `update tags:${tags}, meet the fail limit.`,
+                        );
                         throw new TagFetchError(tags);
                     }
                 } else {
@@ -91,7 +105,6 @@ class DanbooruApi {
             }
         }
 
-
         const ret = cacheList.pop()!;
         return ret;
     }
@@ -99,13 +112,12 @@ class DanbooruApi {
     EnableAuth(name: string, apiKey: string) {
         this._authObj = {
             login: name,
-            api_key: apiKey
+            api_key: apiKey,
         };
     }
 
     DisableAuth() {
-        if (this._authObj == undefined)
-            return;
+        if (this._authObj == undefined) return;
         this._authObj = undefined;
     }
 
@@ -115,14 +127,14 @@ class DanbooruApi {
 
     GetRating() {
         switch (this._rating) {
-            case 'g':
-                return 'general';
-            case 's':
-                return 'sensitive';
-            case 'q':
-                return 'questionable';
-            case 'e':
-                return  'explicit';      
+            case "g":
+                return "general";
+            case "s":
+                return "sensitive";
+            case "q":
+                return "questionable";
+            case "e":
+                return "explicit";
         }
         return undefined;
     }
@@ -138,14 +150,14 @@ class DanbooruApi {
             ext: ret.ext,
             id: ret.id,
             source_url: ret.source_url,
-        }
+        };
     }
 
     async GetImageFromId(id: number) {
-        const res = await this.fetchDanbooruApi({
+        const res = (await this.fetchDanbooruApi({
             page: `b${id + 1}`,
             limit: 1,
-        }) as { [key: string]: any }[];
+        })) as { [key: string]: any }[];
 
         try {
             return {
@@ -153,13 +165,11 @@ class DanbooruApi {
                 ext: res[0].media_asset.variants[3].file_ext,
                 id: res[0].id,
                 source_url: res[0].file_url,
-            }
+            };
         } catch {
-            throw new Error('Get image from id.');
+            throw new Error("Get image from id.");
         }
-
     }
-
 }
 
 export default DanbooruApi;
