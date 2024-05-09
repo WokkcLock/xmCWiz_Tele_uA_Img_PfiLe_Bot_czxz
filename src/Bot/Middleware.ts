@@ -100,6 +100,7 @@ class CommandMw {
         }
     }
 
+    @MDecorator.CusErrHanlde
     async ListKindTags(ctx: CommandContext<CusContext>) {
         const kind = ctx.match;
         if (kind === "") {
@@ -110,7 +111,7 @@ class CommandMw {
         }
         const tags = await this._ucMan.GetKindTags(ctx.chat.id, kind);
         ctx.reply(
-            `*Kind*: \_${kind}\_\n*Tags*: ${formatMdStr(tags.join(", "))}`,
+            `*Kind*: \_${formatMdStr(kind)}\_\n*Tags*: ${formatMdStr(tags.join(", "))}`,
             {
                 parse_mode: "MarkdownV2",
             },
