@@ -3,7 +3,7 @@ import DanbooruApi from "../utils/DanbooruApi.js";
 import UserCacheManager from "../utils/User/UserCacheManager.js";
 import { createConversation, conversations } from "@grammyjs/conversations";
 import { CusCvClass, cvNames } from "./CusCv.js";
-import CommandMw from "./Middleware.js";
+import { CommandMw, CallbackMw } from "./Middleware.js";
 import { Menu } from "@grammyjs/menu";
 
 async function initBot(
@@ -16,6 +16,7 @@ async function initBot(
     // const ucMan = new UserCacheManager();
     const cvFunc = new CusCvClass(ucMan);
     const commandMw = new CommandMw(ucMan, dan);
+    CallbackMw.setDanbooruApi(dan);
 
     // 安装会话插件
     bot.use(
@@ -46,42 +47,11 @@ async function initBot(
     bot.command("tag", commandMw.Tag.bind(commandMw));
     bot.command("id", commandMw.Id.bind(commandMw));
     bot.command("start", commandMw.Start.bind(commandMw));
+    bot.command("set_rating", commandMw.SetRating.bind(commandMw));
 
-    // menu插件相关
-    const setRatingMenu = new Menu<CusContext>("set_rating")
-        .text("general", (ctx) => {
-            dan.SetRating("g");
-            ctx.reply("set rating to general");
-        })
-        .text("sensitive", (ctx) => {
-            dan.SetRating("s");
-            ctx.reply("set rating to sensitive");
-        })
-        .text("questionable", (ctx) => {
-            dan.SetRating("q");
-            ctx.reply("set rating to questionable");
-        })
-        .row()
-        .text("explicit", (ctx) => {
-            dan.SetRating("e");
-            ctx.reply("set rating to explicit");
-        })
-        .text("disable", (ctx) => {
-            dan.DisableRating();
-            ctx.reply("rating has been disabled");
-        });
+    // callback_data
+    CallbackMw.setBotCallbackDataDataHandle(bot);
 
-    bot.use(setRatingMenu);
-    bot.command("set_rating", async (ctx) => {
-        let nowRating = dan.GetRating();
-        if (nowRating == undefined) {
-            nowRating = "disabled";
-        }
-        await ctx.reply(`*Now rating*: _${nowRating}_\n`, {
-            reply_markup: setRatingMenu,
-            parse_mode: "MarkdownV2",
-        });
-    });
     return bot;
 }
 

@@ -1,4 +1,4 @@
-import { CommandContext, InputFile } from "grammy";
+import { CommandContext, InputFile, InlineKeyboard, Bot } from "grammy";
 import UserCacheManager from "../utils/User/UserCacheManager.js";
 import DanbooruApi from "../utils/DanbooruApi.js";
 import { LogLevel, levelLog } from "../utils/LevelLog.js";
@@ -21,24 +21,17 @@ class CommandMw {
 
     // command处理
     SetRating(ctx: CommandContext<CusContext>) {
+        const inlineKeyboard = new InlineKeyboard()
+            .text("general")
+            .text("sensitive")
+            .text("questionable")
+            .row()
+            .text("explicit")
+            .text("disable")
         ctx.reply(
             `*Now rating*: _${this._dan.GetRating()}_\n*optional*: general, sensitive, questionable, explicit`,
             {
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            { text: "general", callback_data: "general" },
-                            { text: "sensitive", callback_data: "sensitive" },
-                            {
-                                text: "questionable",
-                                callback_data: "questionable",
-                            },
-                            { text: "explicit", callback_data: "explicit" },
-                            { text: "disable", callback_data: "disable" },
-                        ],
-                    ],
-                    resize_keyboard: true,
-                },
+                reply_markup: inlineKeyboard,
                 parse_mode: "MarkdownV2",
             },
         );
@@ -257,4 +250,42 @@ class CommandMw {
     }
 }
 
-export default CommandMw;
+class CallbackMw {
+    private static _dan: DanbooruApi | undefined;
+
+    static setDanbooruApi(inputDan: DanbooruApi) {
+        this._dan = inputDan;
+    }
+
+    static setBotCallbackDataDataHandle(bot: Bot<CusContext>) {
+        if (CallbackMw._dan == undefined) {
+            throw Error("CallbackMw can't use before setDanbooruApi");
+        }
+        bot.on("callback_query:data", async ctx => {
+            const callbackData = ctx.callbackQuery.data;
+            switch (callbackData) {
+                case "general":
+                case "sensitive":
+                case "questionable":
+                case "explicit":
+                    CallbackMw._dan!.SetRating(callbackData[0] as Rating);
+                    await ctx.answerCallbackQuery(
+                        `The Rating has been set: ${callbackData}`,
+                    );
+                    // 处理 Option 4 的逻辑
+                    break;
+                case "disable":
+                    CallbackMw._dan!.DisableRating();
+                    await ctx.answerCallbackQuery("The Rating has been disable");
+                    break;
+                default:
+                    levelLog(LogLevel.error, `unknown callback_data: ${callbackData}`);
+                    await ctx.answerCallbackQuery(); // 移除加载动画
+                    return;
+            }
+        });
+    }
+
+}
+
+export { CommandMw, CallbackMw };
