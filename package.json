@@ -18,7 +18,6 @@
   "type": "module",
   "dependencies": {
     "@grammyjs/conversations": "^1.2.0",
-    "@grammyjs/menu": "^1.2.1",
     "@grammyjs/parse-mode": "^1.10.0",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^9.4.3",
