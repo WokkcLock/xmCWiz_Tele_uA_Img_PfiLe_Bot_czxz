@@ -216,7 +216,7 @@ class CommandMw {
     }
 
     Start(ctx: CommandContext<CusContext>) {
-        ctx.replyFmt(fmt`${bold("Welcome to img bot, you can use the commands below")}
+        ctx.replyFmt(fmt`${bold("Welcome, you can use the commands below")}
          /start: ${italic("print the help message")}
          /tag <tag>: ${italic("get random image of the input tag")}
          /id <id>: ${italic("get certain image of the id")}

@@ -14,6 +14,7 @@ async function main() {
     botToken = args[0];
   }
 
+
   const dan = await DanbooruApi.Create();
   const ucMan = new UserCacheManager();
   process.on("SIGINT", async () => {
