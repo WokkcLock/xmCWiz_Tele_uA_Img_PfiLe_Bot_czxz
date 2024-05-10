@@ -5,7 +5,15 @@ import DanbooruApi from "./utils/DanbooruApi.js";
 import UserCacheManager from "./utils/User/UserCacheManager.js";
 
 async function main() {
-  const botToken = readlineSync.question("Please input your bot token: ");
+  const args = process.argv.slice(2);
+  let botToken: string;
+
+  if (args.length == 0) {
+    botToken = readlineSync.question("Please input your bot token: ");
+  } else {
+    botToken = args[0];
+  }
+
   const dan = await DanbooruApi.Create();
   const ucMan = new UserCacheManager();
   // process.on("exit", async () => {
