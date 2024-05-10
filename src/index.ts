@@ -16,10 +16,6 @@ async function main() {
 
   const dan = await DanbooruApi.Create();
   const ucMan = new UserCacheManager();
-  // process.on("exit", async () => {
-  //   await ucMan.DumpAllBeforeShutdown();
-  //   process.exit(0);
-  // });
   process.on("SIGINT", async () => {
     await ucMan.DumpAllBeforeShutdown();
     process.exit(0);
