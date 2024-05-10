@@ -1,12 +1,17 @@
 import { Context } from "grammy";
 import {
-    KindNotExistError, KindAlreadyExistError, EmptyKindError,
-    TagNotExistError, TagAlreadyExistError, AllHasNoTagError
-}
-    from "../utils/User/CustomError.js";
+    KindNotExistError,
+    KindAlreadyExistError,
+    EmptyKindError,
+    AllHasNoTagError,
+} from "../utils/User/CustomError.js";
 
 class MDecorator {
-    static CusErrHanlde(_: Object, key: string, descriptor: PropertyDescriptor) {
+    static CusErrHanlde(
+        _: Object,
+        key: string,
+        descriptor: PropertyDescriptor,
+    ) {
         const originalMethod = descriptor.value as (ctx: Context) => any;
         descriptor.value = async function (ctx: Context) {
             try {
@@ -20,6 +25,7 @@ class MDecorator {
                         ctx.reply(`ActionFail: ${err.message}`);
                         break;
                     default:
+                        console.error(err);
                         ctx.reply(`Fail: Unexpected error.`);
                 }
                 // if (err instanceof KindAlreadyExistError) {
@@ -38,7 +44,7 @@ class MDecorator {
                 //     ctx.reply(`Fail: Unexpected error.`);
                 // }
             }
-        }
+        };
     }
 }
 
