@@ -2,7 +2,7 @@ import AbstractFetcher from "./Fetcher/Fetcher.js";
 import CurlFetcher from "./Fetcher/CurlFetcher.js";
 import { LogLevel, levelLog } from "./LevelLog.js";
 import { asyncSleep } from "./ToolFunc.js";
-import { TagFetchError } from "./User/CustomError.js";
+import { TagFetchError } from "./CustomError.js";
 
 const DanbooruBaseApiUrl = "https://danbooru.donmai.us/posts.json";
 const getLimit = 20; // 每次请求限制

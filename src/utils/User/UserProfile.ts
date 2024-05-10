@@ -5,7 +5,7 @@ import {
     TagAlreadyExistError,
     TagNotExistError,
     AllHasNoTagError,
-} from "./CustomError.js";
+} from "../CustomError.js";
 
 class UserProfile {
     private _tagMap: Map<string, Set<string>>;
@@ -33,12 +33,14 @@ class UserProfile {
         this._tagMap.set(newKind, new Set());
     }
 
+    IsKindExist(kind: string) {
+        return this._tagMap.has(kind);
+    }
+
     PatchKind(kind: string, tags: string[]) {
-        if (!this._tagMap.has(kind)) {
-            throw new KindNotExistError(kind);
-        }
         var newSet = new Set(tags);
         this._tagMap.set(kind, newSet);
+        return newSet.size;
     }
 
     RemoveTagKind(kind: string) {
@@ -49,29 +51,23 @@ class UserProfile {
     }
 
     AddTags(kind: string, tags: string[]) {
-        if (!this._tagMap.has(kind)) {
-            throw new KindNotExistError(kind);
-        }
         const tagSet = this._tagMap.get(kind)!;
-        const ret = [] as string[];
+        let ret = 0
         for (const tag of tags) {
             if (!tagSet.has(tag)) {
                 tagSet.add(tag);
-                ret.push(tag);
+                ret++;
             }
         }
         return ret;
     }
     RmTags(kind: string, tags: string[]) {
-        if (!this._tagMap.has(kind)) {
-            throw new KindNotExistError(kind);
-        }
         const tagSet = this._tagMap.get(kind)!;
-        const ret = [] as string[];
+        let ret = 0;
         for (const tag of tags) {
             if (tagSet.has(tag)) {
                 tagSet.delete(tag);
-                ret.push(tag);
+                ret++;
             }
         }
         return ret;

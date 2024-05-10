@@ -48,6 +48,18 @@ export class AllHasNoTagError extends Error {
     }
 }
 
+export class ParamNotExistError extends Error {
+    constructor(paramName: string) {
+        super(paramName)
+    }
+}
+
+export class ParamKindNotExistError extends ParamNotExistError {
+    constructor() {
+        super("kind");
+    }
+}
+
 // 设计上不会发生的错误，仅仅只是为了骗过编译器
 class UnexpectedError extends Error {
     constructor (message: string) {

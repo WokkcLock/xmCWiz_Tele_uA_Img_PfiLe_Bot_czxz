@@ -47,6 +47,11 @@ class UserCacheManager {
         return this._cache.get(chatId)!;
     }
 
+    async IsKindExist(chatId: number, kind: string) {
+        const item = await this.getItem(chatId);
+        return item.profile.IsKindExist(kind);
+    }
+
     async DumpAllBeforeShutdown() {
         // 遍历 _cache
         levelLog(LogLevel.debug, "dump cache to sql before shutdown");

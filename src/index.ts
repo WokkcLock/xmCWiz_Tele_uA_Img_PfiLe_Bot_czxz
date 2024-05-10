@@ -1,4 +1,4 @@
-import { initBot } from "./Bot/api.js";
+import { initBot } from "./utils/Bot/api.js";
 import * as readlineSync from "readline-sync";
 import { levelLog, LogLevel } from "./utils/LevelLog.js";
 import DanbooruApi from "./utils/DanbooruApi.js";

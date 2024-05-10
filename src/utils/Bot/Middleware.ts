@@ -1,12 +1,14 @@
 import { CommandContext, InputFile, InlineKeyboard, Bot } from "grammy";
-import UserCacheManager from "../utils/User/UserCacheManager.js";
-import DanbooruApi from "../utils/DanbooruApi.js";
-import { LogLevel, levelLog } from "../utils/LevelLog.js";
-import { formatMdStr } from "../utils/ToolFunc.js";
+import UserCacheManager from "../User/UserCacheManager.js";
+import DanbooruApi from "../DanbooruApi.js";
+import { LogLevel, levelLog } from "../LevelLog.js";
+import { formatMdStr } from "../ToolFunc.js";
 import MDecorator from "./MDecorator.js";
-import { AllHasNoTagError, TagFetchError } from "../utils/User/CustomError.js";
+import { AllHasNoTagError, ParamKindNotExistError, TagFetchError } from "../CustomError.js";
 import { cvNames } from "./CusCv.js";
 import { ReservedApi } from "./ReservedWord.js";
+import { bold, fmt, italic } from "@grammyjs/parse-mode";
+
 
 class CommandMw {
     private _ucMan: UserCacheManager;
@@ -41,12 +43,9 @@ class CommandMw {
         const id = ctx.match;
         const reg = /\d+/g;
         if (!reg.test(id)) {
-            ctx.reply("*Your input id invalid, only number*", {
-                parse_mode: "MarkdownV2",
-            });
+            ctx.reply("Your input id invalid, only number");
             return;
         }
-
         try {
             const ret = await this._dan.GetImageFromId(parseInt(id));
             await ctx.replyWithPhoto(new InputFile(ret.data), {
@@ -62,12 +61,11 @@ class CommandMw {
         const tag = ctx.match;
         const reg = /^\S+$/g;
         if (!reg.test(tag)) {
-            ctx.reply("*Your input tags invalid, please check danbooru*", {
+            ctx.reply("Your input tags invalid, please check danbooru", {
                 parse_mode: "MarkdownV2",
             });
             return;
         }
-
         try {
             const ret = await this._dan.GetImageFromTags(tag);
             await ctx.replyWithPhoto(new InputFile(ret.data), {
@@ -84,10 +82,10 @@ class CommandMw {
         const kinds = await this._ucMan.GetAllKinds(ctx.chat.id);
         if (kinds.length == 0) {
             ctx.reply(
-                "there is still no kind, please use /add_kind to add a kind",
+                "there is still no kind, you can use /add_kind to add a kind",
             );
         } else {
-            ctx.reply(`_${formatMdStr(kinds.join(", "))}_`, {
+            ctx.reply(`\`${formatMdStr(kinds.join("`  `"))}\``, {
                 parse_mode: "MarkdownV2",
             });
         }
@@ -97,32 +95,32 @@ class CommandMw {
     async ListKindTags(ctx: CommandContext<CusContext>) {
         const kind = ctx.match;
         if (kind === "") {
-            ctx.reply("*Please input the param: kind name*", {
-                parse_mode: "MarkdownV2",
-            });
-            return;
+            throw new ParamKindNotExistError();
         }
         const tags = await this._ucMan.GetKindTags(ctx.chat.id, kind);
-        ctx.reply(
-            `*Kind*: \_${formatMdStr(kind)}\_\n*Tags*: ${formatMdStr(tags.join(", "))}`,
-            {
-                parse_mode: "MarkdownV2",
-            },
-        );
+        if (tags.length == 0) {
+            ctx.replyFmt(
+                fmt`there is still no tags in ${bold(kind)}, you can use /add_tags to add tags`,
+            );
+        } else {
+            ctx.reply(
+                `*\\[Kind\\]*:  \`${formatMdStr(kind)}\`\n*\\[tags\\]*:  \`${formatMdStr(tags.join("`  `"))}\``,
+                {
+                    parse_mode: "MarkdownV2",
+                },
+            );
+        }
     }
 
     @MDecorator.CusErrHanlde
     async AddKind(ctx: CommandContext<CusContext>) {
         const kind = ctx.match;
         if (kind === "") {
-            ctx.reply("*Please input kind*", {
-                parse_mode: "MarkdownV2",
-            });
-            return;
+            throw new ParamKindNotExistError();
         }
         if (ReservedApi.isReservedWord(kind)) {
             ctx.reply(
-                `*Can't use word ${formatMdStr(kind)}, because it's a reserve word, please change*`,
+                `Can't use word *${formatMdStr(kind)}*, because it's a reserve word, please change`,
                 {
                     parse_mode: "MarkdownV2",
                 },
@@ -130,78 +128,53 @@ class CommandMw {
             return;
         }
         await this._ucMan.AddKind(ctx.chat.id, kind);
-        ctx.reply(`*Add kind*: _${formatMdStr(kind)}_`, {
+        ctx.reply(`*Add kind*: \`${formatMdStr(kind)}\``, {
             parse_mode: "MarkdownV2",
         });
     }
 
     @MDecorator.CusErrHanlde
     async RemoveKind(ctx: CommandContext<CusContext>) {
-        const kind = ctx.match;
-        if (kind === "") {
-            ctx.reply("*Please input kind*", {
-                parse_mode: "MarkdownV2",
-            });
-            return;
+        if (ctx.match === "") {
+            throw new ParamKindNotExistError();
         }
-        await this._ucMan.RemoveKind(ctx.chat.id, kind);
-        ctx.reply(`*Remove kind*: _${kind}_`, {
+        await this._ucMan.RemoveKind(ctx.chat.id, ctx.match);
+        ctx.reply(`*Remove kind*: \`${ctx.match}\``, {
             parse_mode: "MarkdownV2",
         });
     }
 
     @MDecorator.CusErrHanlde
     async PatchKind(ctx: CommandContext<CusContext>) {
-        const kind = ctx.match;
-        if (kind === "") {
-            ctx.reply("*Please input kind*", {
-                parse_mode: "MarkdownV2",
-            });
-            return;
+        if (ctx.match === "") {
+            throw new ParamKindNotExistError();
         }
-        ctx.session.tagKind = kind;
+        ctx.session.tagKind = ctx.match;
         await ctx.conversation.enter(cvNames.patchKind);
     }
 
     @MDecorator.CusErrHanlde
     async AddTags(ctx: CommandContext<CusContext>) {
-        const kind = ctx.match;
-        if (kind === "") {
-            ctx.reply("*Please input the param kind *", {
-                parse_mode: "MarkdownV2",
-            });
-            return;
+        if (ctx.match === "") {
+            throw new ParamKindNotExistError();
         }
-        ctx.session.tagKind = kind;
+        ctx.session.tagKind = ctx.match;
         await ctx.conversation.enter(cvNames.addTags);
-        // await this._ucMan.AddTag(ctx.chat.id, kind, tag);
-        // ctx.reply(`*Add tag*: _${tag}_ to *${kind}*`, {
-        //     parse_mode: "MarkdownV2",
-        // });
     }
 
     @MDecorator.CusErrHanlde
     async RemoveTags(ctx: CommandContext<CusContext>) {
-        const kind = ctx.match;
-        if (kind === "") {
-            ctx.reply("*Please input the param: kind*", {
-                parse_mode: "MarkdownV2",
-            });
-            return;
+        if (ctx.match === "") {
+            throw new ParamKindNotExistError();
         }
-        ctx.session.tagKind = kind;
+        ctx.session.tagKind = ctx.match;
         await ctx.conversation.enter(cvNames.rmTags);
-        // await this._ucMan.RemoveTag(ctx.chat.id, kind, tag);
-        // ctx.reply(`*Remove tag*: _${tag}_ from *${kind}*`, {
-        //     parse_mode: "MarkdownV2",
-        // });
     }
 
     @MDecorator.CusErrHanlde
     async Random(ctx: CommandContext<CusContext>) {
         let tags: string;
         let kind: string;
-
         try {
             if (ctx.match === "") {
                 [kind, tags] = await this._ucMan.GetAllRandomTag(ctx.chat.id);
@@ -243,10 +216,20 @@ class CommandMw {
     }
 
     Start(ctx: CommandContext<CusContext>) {
-        // ctx.reply(
-        //     `*Welcome to img bot*\n*Usage*: \n/tag <tag>\n/id <id>\n/rating`,
-        // );
-        ctx.reply(`your id: ${ctx.chat.id}`);
+        ctx.replyFmt(fmt`${bold("Welcome to img bot, you can use the commands below")}
+         /start: ${italic("print the help message")}
+         /tag <tag>: ${italic("get random image of the input tag")}
+         /id <id>: ${italic("get certain image of the id")}
+         /list_kinds: ${italic("list all kinds you set")}
+         /list_tags <kind>: ${italic("list tags of a certain kind")} 
+         /add_kind <kind>: ${italic("add a new tag kind")}
+         /rm_kind <kind>: ${italic("remove a tag kind")}
+         /patch_kind <kind>: ${italic("use new tag list cover a kind")}
+         /add_tags <kind>: ${italic("add new tags to a exist kind")}
+         /rm_tags <kind>: ${italic("remove tags of a exist kind")}
+         /random [kind]: ${italic("Fetch images of the input kind random tag, will of all kinds Without parameters")}
+         `)
+        // ctx.reply(`your id: ${ctx.chat.id}`);
     }
 }
 

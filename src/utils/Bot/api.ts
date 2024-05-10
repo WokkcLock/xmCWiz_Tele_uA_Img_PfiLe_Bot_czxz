@@ -1,10 +1,10 @@
 import { Bot, session } from "grammy";
-import DanbooruApi from "../utils/DanbooruApi.js";
-import UserCacheManager from "../utils/User/UserCacheManager.js";
+import DanbooruApi from "../DanbooruApi.js";
+import UserCacheManager from "../User/UserCacheManager.js";
 import { createConversation, conversations } from "@grammyjs/conversations";
 import { CusCvClass, cvNames } from "./CusCv.js";
 import { CommandMw, CallbackMw } from "./Middleware.js";
-import { Menu } from "@grammyjs/menu";
+import { hydrateReply } from "@grammyjs/parse-mode";
 
 async function initBot(
     botToken: string,
@@ -27,6 +27,9 @@ async function initBot(
 
     // 安装对话插件
     bot.use(conversations());
+
+    // 安装格式化插件
+    bot.use(hydrateReply);
 
     // 安装对话
     bot.use(createConversation(cvFunc.AddTags.bind(cvFunc), cvNames.addTags));

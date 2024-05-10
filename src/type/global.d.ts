@@ -1,6 +1,7 @@
 import { Context, SessionFlavor } from "grammy";
 import { type ConversationFlavor, type Conversation } from "@grammyjs/conversations";
 import UserProfile from "../utils/User/UserProfile.js";
+import type { ParseModeFlavor } from "@grammyjs/parse-mode";
 
 declare global {
     type DanbooruParams = {
@@ -22,7 +23,7 @@ declare global {
         tagKind: string,
     }
 
-    type CusContext = Context & ConversationFlavor & SessionFlavor<CusSessionData>;
+    type CusContext = ParseModeFlavor<Context> & ConversationFlavor & SessionFlavor<CusSessionData>;
     type CusConversation = Conversation<CusContext>;
 
 
