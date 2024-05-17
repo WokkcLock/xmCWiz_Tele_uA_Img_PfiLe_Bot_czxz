@@ -24,9 +24,14 @@ async function main() {
 
   const bot = await initBot(botToken, dan, ucMan);
 
+
   bot.start();
   levelLog(LogLevel.deploy, "Bot start.");
   return;
 }
+
+
+
+
 
 main();
