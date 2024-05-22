@@ -4,7 +4,6 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "tsc && node dist/src/index.js --deploy",
     "dev": "tsc && node dist/src/index.js",
     "clean": "rimraf dist"
   },
@@ -24,7 +23,6 @@
     "chalk": "^5.3.0",
     "form-data": "^4.0.0",
     "grammy": "^1.20.3",
-    "readline-sync": "^1.4.10",
-    "typescript": "^5.4.5"
+    "readline-sync": "^1.4.10"
   }
 }
