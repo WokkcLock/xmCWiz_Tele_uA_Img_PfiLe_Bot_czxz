@@ -5,7 +5,7 @@ import { asyncSleep } from "./ToolFunc.js";
 import { TagFetchError } from "./CustomError.js";
 
 const DanbooruBaseApiUrl = "https://danbooru.donmai.us/posts.json";
-const getLimit = 20; // 每次请求限制
+const getLimit = 7; // 每次请求限制
 
 class DanbooruApi {
     private _fetcher: AbstractFetcher;
@@ -123,6 +123,8 @@ class DanbooruApi {
 
     SetRating(rating: Rating) {
         this._rating = rating;
+        // 改变rating时将tagsUrlCache清空
+        this._tagsUrlCache.clear();
     }
 
     GetRating() {
@@ -141,6 +143,8 @@ class DanbooruApi {
 
     DisableRating() {
         this._rating = undefined;
+        // 改变rating时将tagsUrlCache清空
+        this._tagsUrlCache.clear();
     }
 
     async GetImageFromTags(tags: string) {
