@@ -8,8 +8,7 @@
     "clean": "rimraf dist"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/better-sqlite3": "^7.6.10",
+    "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^20.11.4",
     "@types/readline-sync": "^1.4.8",
     "rimraf": "^5.0.5"
@@ -18,7 +17,6 @@
   "dependencies": {
     "@grammyjs/conversations": "^1.2.0",
     "@grammyjs/parse-mode": "^1.10.0",
-    "bcryptjs": "^2.4.3",
     "better-sqlite3": "^9.4.3",
     "chalk": "^5.3.0",
     "form-data": "^4.0.0",
