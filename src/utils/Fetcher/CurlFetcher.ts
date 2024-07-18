@@ -2,6 +2,7 @@ import AbstractFetcher from "./Fetcher.js";
 import { isEmptyObject } from "../ToolFunc.js";
 import { exec } from "child_process";
 import queryString, { ParsedUrlQueryInput } from "querystring";
+import { exit } from "process";
 
 class CurlFetcher extends AbstractFetcher {
     constructor() {
@@ -20,8 +21,9 @@ class CurlFetcher extends AbstractFetcher {
     async GetJson(url: string, params: ParsedUrlQueryInput = {}): Promise<any> {
         return new Promise((resolve, reject) => {
             //* -s: 不输出错误和进度信息，这主要是为了回避if(stderr)在正常情况也会出错
+            const command = `curl -s ${CurlFetcher.preFormatUrl(url, params)}`;
             exec(
-                `curl -s ${CurlFetcher.preFormatUrl(url, params)}`,
+                command,
                 (error, stdout, stderr) => {
                     if (error) {
                         reject(

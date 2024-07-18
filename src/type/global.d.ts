@@ -2,6 +2,8 @@ import { Context, SessionFlavor } from "grammy";
 import { type ConversationFlavor, type Conversation } from "@grammyjs/conversations";
 import UserProfile from "../utils/User/UserProfile.js";
 import type { ParseModeFlavor } from "@grammyjs/parse-mode";
+import SqlApi from "../utils/Sql/SqlApi.js";
+import { ImageFileExtEnum } from "./CustomEnum.js";
 
 declare global {
     type DanbooruParams = {
@@ -18,16 +20,17 @@ declare global {
         timer: NodeJS.Timeout,
         isWrited: boolean,
     }
+    type Rating = 'g' | 's' | 'q' | 'e' | undefined;
 
     interface CusSessionData {
+        rating: Rating,
         tagKind: string,
+        sql: SqlApi,
     }
 
     type CusContext = ParseModeFlavor<Context> & ConversationFlavor & SessionFlavor<CusSessionData>;
     type CusConversation = Conversation<CusContext>;
 
-
-    type Rating = 'g' | 's' | 'q' | 'e';
-
-
+    // SQl相关
+    type SqlCountRet = { "COUNT(*)": number };
 }

@@ -1,12 +1,22 @@
-const tableName = "user";
-
-const sqls = {
-    createTable: `
-        CREATE TABLE IF NOT EXISTS ${tableName}
-        (hash TEXT primary key, content TEXT)
-    `,  // * sql语句无所谓前后的空格或者换行
+const tableName = 
+{
+    kind: "kinds",
+    tag: "tags",
+    cache: {
+        g: "general_cache",
+        s: "sensitive_cache",
+        q: "questionable_cache",
+        e: "explicit_cache",
+        n: "disable_cache"
+    },    
 }
 
-export {sqls, tableName};
+
+const kindStrLenLimit = 50;
+const tagstrLenLimit = 50;
+
+
+export { tableName,
+    kindStrLenLimit, tagstrLenLimit };
 
 

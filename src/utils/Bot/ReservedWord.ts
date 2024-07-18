@@ -1,5 +1,6 @@
 const ReserveWord: {[key:string]: string} = {
     exit: ".exit",
+    clear: ".clear",
 }
 
 class ReservedApi {

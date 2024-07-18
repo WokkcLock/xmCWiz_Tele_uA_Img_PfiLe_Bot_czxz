@@ -12,6 +12,13 @@ export class KindAlreadyExistError extends Error {
     }
 }
 
+export class KindNameTooLongError extends Error {
+    constructor(kind: string) {
+        super(`the name: ${kind}, too long`);
+        this.name = "KindNameTooLongError";
+    }
+}
+
 export class EmptyKindError extends Error {
     constructor(kind: string) {
         super(`Kind [${kind}] has no tags`);
@@ -36,14 +43,14 @@ export class TagAlreadyExistError extends Error {
 
 export class TagFetchError extends Error {
     constructor(tag: string) {
-        super(`Tag ${tag} fetch error`);
+        super(`Tag ${tag} fetch error, this tag may be invalid, you can use /rm_tags to remove it.`);
         this.name = "TagFetchError";
     }
 }
 
 export class AllHasNoTagError extends Error {
     constructor() {
-        super(`All kind has no tags`);
+        super(`there is no kind has tags, please use /add_kind command to add a kind and /add_tags command to add tags`);
         this.name = "AllHasNoTagError";
     }
 }

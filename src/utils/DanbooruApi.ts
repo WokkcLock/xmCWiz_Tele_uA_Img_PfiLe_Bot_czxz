@@ -3,65 +3,119 @@ import CurlFetcher from "./Fetcher/CurlFetcher.js";
 import { LogLevel, levelLog } from "./LevelLog.js";
 import { asyncSleep } from "./ToolFunc.js";
 import { TagFetchError } from "./CustomError.js";
+import { ImageFileExtEnum } from "../type/CustomEnum.js";
+import SqlApi from "./Sql/SqlApi.js";
+import { assert } from "console";
 
 const DanbooruBaseApiUrl = "https://danbooru.donmai.us/posts.json";
 const getLimit = 7; // 每次请求限制
 
 class DanbooruApi {
     private _fetcher: AbstractFetcher;
-    private _authObj: { login: string; api_key: string } | undefined;
-    private _tagsUrlCache = new Map<
-        string,
-        { url: string; ext: string; id: number; source_url: string }[]
-    >();
-    private _rating: Rating | undefined;
+    private _sql: SqlApi
 
-    private constructor(fetcher: AbstractFetcher) {
+    private constructor(fetcher: AbstractFetcher, sqlApi: SqlApi) {
         this._fetcher = fetcher;
+        this._sql = sqlApi;
     }
 
-    static async Create() {
+    static async Create(sqlApi: SqlApi) {
         const fetcher = new CurlFetcher();
         await fetcher.Init();
-        return new DanbooruApi(fetcher);
+        return new DanbooruApi(fetcher, sqlApi);
     }
 
-    private async getImg(url: string) {
-        return await this._fetcher.GetByteFile(url);
+    private getImg(url: string) {
+        return this._fetcher.GetByteFile(url);
     }
 
     private async fetchDanbooruApi(params: DanbooruParams) {
         return await this._fetcher.GetJson(DanbooruBaseApiUrl, params);
     }
 
-    private async updateTagsMap(tagsWithRating: string) {
-        const params: DanbooruParams = {
-            tags: `${tagsWithRating} random:${getLimit}`,
-            // random: true,
-            // limit: 20,
-            // limit: 2,
-        };
-        if (this._authObj != undefined) {
-            params.login = this._authObj.login;
-            params.api_key = this._authObj.api_key;
+    private getFileExtStr(fileExtEnum: ImageFileExtEnum) {
+        switch (fileExtEnum) {
+            case ImageFileExtEnum.jpg:
+                return "jpg";
+            case ImageFileExtEnum.png:
+                return "png";
+            case ImageFileExtEnum.webp:
+                return "webp";
+            case ImageFileExtEnum.bmp:
+                return "bmp";
+            case ImageFileExtEnum.gif:
+                return "gif";
+            case ImageFileExtEnum.svg:
+                return "svg";
+            case ImageFileExtEnum.tiff:
+                return "tiff";
+            default:    // 按理说绝不会执行到这里
+                throw new Error("Invalid fileExtEnum");
         }
+    }
+
+    private getSampleUrl(md5: string, fileExtEnum: ImageFileExtEnum) {
+        // https://cdn.donmai.us/sample/6d/b2/sample-6db26e9cdcf02cbfa98ba7409a61d5cb.jpg
+        return `https://cdn.donmai.us/sample/${md5[0] + md5[1]}/${md5[2] + md5[3]}/sample-${md5}.${this.getFileExtStr(fileExtEnum)}`;
+    }
+
+    private getOriginUrl(md5: string, fileExtEnum: ImageFileExtEnum) {
+        // https://cdn.donmai.us/original/6d/b2/6db26e9cdcf02cbfa98ba7409a61d5cb.jpg
+        return `https://cdn.donmai.us/original/${md5[0] + md5[1]}/${md5[2] + md5[3]}/${md5}.${this.getFileExtStr(fileExtEnum)}`;
+    }
+
+    async updateTagCache(rating: Rating, tag: string) {
+        const params: DanbooruParams = {
+            tags: `${tag} random:${getLimit}`,
+        };
         levelLog(LogLevel.deploy, `Tags: ${params.tags}, Update map.`);
         const res = (await this.fetchDanbooruApi(params)) as {
             [key: string]: any;
         }[];
         const dataList = [] as {
-            url: string;
-            ext: string;
-            id: number;
-            source_url: string;
+            md5: string,
+            file_ext: ImageFileExtEnum;
+            image_id: number;
         }[];
         for (const item of res) {
             try {
+                // variants[3]：sample
+                // 示例url: https://cdn.donmai.us/sample/82/9e/sample-829e06771f5d86491a9b44f50bdcfa92.jpg
+                // variants[4]：原图
+                // 示例url: https://cdn.donmai.us/original/82/9e/829e06771f5d86491a9b44f50bdcfa92.jpg
+
+                // 这里是获取sample图样的信息
+                const fileExtStr = (item.media_asset.variants[3].file_ext as string).toLowerCase().trim();
+                let fileExt: ImageFileExtEnum;
+                switch (fileExtStr) {
+                    case "jpg":
+                        fileExt = ImageFileExtEnum.jpg;
+                        break;
+                    case "png":
+                        fileExt = ImageFileExtEnum.png;
+                        break;
+                    case "webp":
+                        fileExt = ImageFileExtEnum.webp;
+                        break;
+                    case "bmp":
+                        fileExt = ImageFileExtEnum.bmp;
+                        break;
+                    case "gif":
+                        fileExt = ImageFileExtEnum.gif;
+                        break;
+                    case "svg":
+                        fileExt = ImageFileExtEnum.svg;
+                        break;
+                    case "tiff":
+                        fileExt = ImageFileExtEnum.tiff;
+                        break;
+                    default:
+                        throw new Error("Unknown image file_ext str");
+                }
                 dataList.push({
-                    id: item.id,
-                    url: item.media_asset.variants[3].url, // url
-                    ext: item.media_asset.variants[3].file_ext,
-                    source_url: item.file_url, // 源图链接
+                    image_id: item.id,
+                    md5: item.md5,
+                    file_ext: fileExt,
                 });
             } catch (err) {
                 //* 有可能会失败，但是不管
@@ -73,88 +127,8 @@ class DanbooruApi {
                 continue;
             }
         }
-        this._tagsUrlCache.set(tagsWithRating, dataList);
-        return dataList;
-    }
-
-    private async getFromTagsMap(tags: string) {
-        if (this._rating != undefined) {
-            tags = `${tags} rating:${this._rating}`;
-        }
-        let failCount = 0;
-        let cacheList = this._tagsUrlCache.get(tags);
-        if (cacheList == undefined || cacheList.length <= 0) {
-            while (true) {
-                cacheList = await this.updateTagsMap(tags);
-                // 下面这里写的不是很严谨,总的来说还是失败3次报错
-                if (cacheList.length <= 0) {
-                    failCount++;
-                    if (failCount >= 2) {
-                        levelLog(
-                            LogLevel.error,
-                            `update tags:${tags}, meet the fail limit.`,
-                        );
-                        throw new TagFetchError(tags);
-                    }
-                } else {
-                    // 就算是成功也需要break
-                    await asyncSleep(1000);
-                    break;
-                }
-                await asyncSleep(1000);
-            }
-        }
-
-        const ret = cacheList.pop()!;
-        return ret;
-    }
-
-    EnableAuth(name: string, apiKey: string) {
-        this._authObj = {
-            login: name,
-            api_key: apiKey,
-        };
-    }
-
-    DisableAuth() {
-        if (this._authObj == undefined) return;
-        this._authObj = undefined;
-    }
-
-    SetRating(rating: Rating) {
-        this._rating = rating;
-        // 改变rating时将tagsUrlCache清空
-        this._tagsUrlCache.clear();
-    }
-
-    GetRating() {
-        switch (this._rating) {
-            case "g":
-                return "general";
-            case "s":
-                return "sensitive";
-            case "q":
-                return "questionable";
-            case "e":
-                return "explicit";
-        }
-        return undefined;
-    }
-
-    DisableRating() {
-        this._rating = undefined;
-        // 改变rating时将tagsUrlCache清空
-        this._tagsUrlCache.clear();
-    }
-
-    async GetImageFromTags(tags: string) {
-        const ret = await this.getFromTagsMap(tags);
-        return {
-            data: await this.getImg(ret.url),
-            ext: ret.ext,
-            id: ret.id,
-            source_url: ret.source_url,
-        };
+        // 插入数据库
+        this._sql.InsertCache(rating, tag, dataList);
     }
 
     async GetImageFromId(id: number) {
@@ -172,6 +146,24 @@ class DanbooruApi {
             };
         } catch {
             throw new Error("Get image from id.");
+        }
+    }
+
+    async GetImageFromTag(rating: Rating, tag: string) 
+    {
+        let cacheItem = this._sql.SelectSingleCache(rating, tag);
+        if (cacheItem == undefined) {
+            // 更新后再次尝试
+            await this.updateTagCache(rating, tag);
+            cacheItem = this._sql.SelectSingleCache(rating, tag);
+        }
+        assert(cacheItem != undefined);
+        const imageUrl = this.getSampleUrl(cacheItem!.md5, cacheItem!.file_ext);
+        const imgByte = await this.getImg(imageUrl);
+        return {
+            image_id: cacheItem!.image_id,
+            image_url: imageUrl,
+            image_data: imgByte,
         }
     }
 }

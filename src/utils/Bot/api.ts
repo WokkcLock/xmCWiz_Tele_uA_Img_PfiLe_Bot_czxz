@@ -1,29 +1,31 @@
 import { Bot, session } from "grammy";
+import SqlApi from "../Sql/SqlApi.js";
 import DanbooruApi from "../DanbooruApi.js";
-import UserCacheManager from "../User/UserCacheManager.js";
-import { createConversation, conversations } from "@grammyjs/conversations";
-import { CusCvClass, cvNames } from "./CusCv.js";
-import { CommandMw, CallbackMw } from "./Middleware.js";
+import CommandMw from "./Middleware.js";
+import { conversations, createConversation } from "@grammyjs/conversations";
 import { hydrateReply } from "@grammyjs/parse-mode";
+import { CustomConversations, cvNames } from "./CustomConversations.js";
+import { levelLog, LogLevel } from "../LevelLog.js";
 
-async function initBot(
-    botToken: string,
-    dan: DanbooruApi,
-    ucMan: UserCacheManager,
-) {
+async function initBot(botToken: string) {
     const bot = new Bot<CusContext>(botToken);
-    // const dan = await DanbooruApi.Create();
-    // const ucMan = new UserCacheManager();
-    const cvFunc = new CusCvClass(ucMan);
-    const commandMw = new CommandMw(ucMan, dan);
-    CallbackMw.setDanbooruApi(dan);
+    const sql = new SqlApi();
+    const dan = await DanbooruApi.Create(sql);
+    const commandMw = new CommandMw(dan, sql);
+    const cusCv = new CustomConversations();
+
+    function initialSession(): CusSessionData {
+        return {
+            rating: undefined,
+            tagKind: "",
+            sql,
+        };
+    }
 
     // 安装会话插件
-    bot.use(
-        session({
-            initial: () => ({ tagKind: "" }),
-        }),
-    );
+    bot.use(session({
+        initial: initialSession,
+    }));
 
     // 安装对话插件
     bot.use(conversations());
@@ -32,11 +34,9 @@ async function initBot(
     bot.use(hydrateReply);
 
     // 安装对话
-    bot.use(createConversation(cvFunc.AddTags.bind(cvFunc), cvNames.addTags));
-    bot.use(createConversation(cvFunc.RmTags.bind(cvFunc), cvNames.rmTags));
-    bot.use(
-        createConversation(cvFunc.PatchKind.bind(cvFunc), cvNames.patchKind),
-    );
+    bot.use(createConversation(cusCv.AddTags.bind(cusCv), cvNames.addTags));
+    bot.use(createConversation(cusCv.RmTags.bind(cusCv), cvNames.rmTags));
+    bot.use(createConversation(cusCv.PatchKind.bind(cusCv), cvNames.patchKind));
 
     // 安装中间件
     bot.command("add_tags", commandMw.AddTags.bind(commandMw));
@@ -52,9 +52,31 @@ async function initBot(
     bot.command("start", commandMw.Start.bind(commandMw));
     bot.command("set_rating", commandMw.SetRating.bind(commandMw));
 
-    // callback_data
-    CallbackMw.setBotCallbackDataDataHandle(bot);
-
+    // 对callback_data做处理
+    bot.on("callback_query:data", async ctx => {
+        const callbackData = ctx.callbackQuery.data;
+        switch (callbackData) {
+            case "general":
+            case "sensitive":
+            case "questionable":
+            case "explicit":
+                ctx.session.rating = (callbackData[0] as Rating);
+                await ctx.answerCallbackQuery(
+                    `The Rating has been set: ${callbackData}`,
+                );
+                // 处理 Option 4 的逻辑
+                break;
+            case "disable":
+                ctx.session.rating = undefined;
+                await ctx.answerCallbackQuery("The Rating has been disable");
+                break;
+            default:
+                // 按理说不可能到这里
+                levelLog(LogLevel.error, `unknown callback_data: ${callbackData}`);
+                await ctx.answerCallbackQuery(); // 移除加载动画
+                return;
+        }
+    });
     return bot;
 }
 
