@@ -1,5 +1,4 @@
 import { Bot, session } from "grammy";
-import SqlApi from "../Sql/SqlApi.js";
 import DanbooruApi from "../DanbooruApi.js";
 import CommandMw from "./Middleware.js";
 import { conversations, createConversation } from "@grammyjs/conversations";
@@ -22,7 +21,6 @@ async function initBot(botToken: string) {
             };
         },
     }));
-
     // 安装对话插件
     bot.use(conversations());
 

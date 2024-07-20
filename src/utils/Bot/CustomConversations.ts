@@ -14,8 +14,7 @@ class CustomConversations {
         const kind = ctx.session.tagKind
         const { id: kindId } = await conversation.external(() => sql.SelectKindIdCount(ctx.chat!.id, kind));
         await ctx.replyFmt(
-            fmt`Please input the tag you want to remove, divided by space.\n`
-            + `you can just enter ${code(ReserveWord.clear)} to remove all tags or ${code(ReserveWord.exit)} to cancel.`
+            fmt`Please input the tag you want to remove, divided by space.\nyou can just enter ${code(ReserveWord.clear)} to remove all tags or ${code(ReserveWord.exit)} to cancel.`
         );
         const inputText = await conversation.form.text();
         if (inputText == ReserveWord.exit) {

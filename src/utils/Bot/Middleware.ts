@@ -1,13 +1,42 @@
 import DanbooruApi from "../DanbooruApi.js";
-import SqlApi from "../Sql/SqlApi.js";
 import { levelLog, LogLevel } from "../LevelLog.js";
-import { CommandContext, InlineKeyboard, InputFile } from "grammy";
+import { CommandContext, GrammyError, InlineKeyboard, InputFile } from "grammy";
 import { bold, fmt, italic, code, link } from "@grammyjs/parse-mode";
 import { ParamNotExistError } from "../CustomError.js";
 import MDecorator from "./MDecorator.js";
 import { ReservedApi } from "./ReservedWord.js";
 import { cvNames } from "./CustomConversations.js";
 import sql from "../Sql/index.js";
+
+const retryUpLimit = 3;
+
+async function canRetrySendPhotoWithTag(ctx: CusContext, dan: DanbooruApi, tag: string) {
+    let failCount = 0;
+    while (1) {
+        // 最多进行4次尝试
+        try {
+            const ret = await dan.GetImageFromTag(ctx.session.rating, tag);
+            await ctx.replyFmtWithPhoto(new InputFile(ret.image_data), {
+                caption: fmt`\n${bold("tag")}: ${italic(tag)}\n${link("gallery", ret.dan_url)}`
+            });
+            break;
+        } catch (error) {
+            if (error instanceof GrammyError) {
+                // sendPhoto错误, 进行重试
+                if (failCount < retryUpLimit) {
+                    levelLog(LogLevel.warn, "send photo fail, retry");
+                    failCount++;
+                } else {
+                    // 发生了过多次的错误，将错误throw出去
+                    levelLog(LogLevel.error, "too many sendPhoto error.");
+                    throw error;
+                }
+            } else {
+                throw error;
+            }
+        }
+    }
+}
 
 class CommandMw {
     private _dan: DanbooruApi;
@@ -58,10 +87,10 @@ class CommandMw {
         }
         try {
             const ret = await this._dan.GetImageFromId(parseInt(id));
-            await ctx.replyWithPhoto(
-                new InputFile(ret.data),
+            await ctx.replyFmtWithPhoto(
+                new InputFile(ret.image_data),
                 {
-                    caption: ret.source_url,
+                    caption: fmt`${link("gallery", ret.dan_url)}`,
                 });
         } catch (err) {
             levelLog(LogLevel.error, err);
@@ -76,18 +105,7 @@ class CommandMw {
             ctx.reply("Your input tags invalid, please check danbooru");
             return;
         }
-        try {
-            const ret = await this._dan.GetImageFromTag(ctx.session.rating, tag);
-            await ctx.replyFmtWithPhoto(
-                new InputFile(ret.image_data),
-                {
-                    caption: fmt`${bold("image id")}: ${italic(ret.image_id)}\n${bold("tags")}: ${italic(tag)}\n${ret.image_url}`
-                }
-            );
-        } catch (err) {
-            levelLog(LogLevel.error, err);
-            await ctx.replyFmt(`${bold("[tag]")}: ${code(tag)}, fetch fail`);
-        }
+        await canRetrySendPhotoWithTag(ctx, this._dan, tag);
     }
 
     async ListKinds(ctx: CommandContext<CusContext>) {
@@ -191,10 +209,7 @@ class CommandMw {
 
         // 一个合法的kindId和tagsCount
         const randomTag = sql.SelectSingleRandomKindTag(kindId);
-        const ret = await this._dan.GetImageFromTag(ctx.session.rating, randomTag);
-        await ctx.replyFmtWithPhoto(new InputFile(ret.image_data), {
-            caption: fmt`\n${bold("image id")}: ${italic(ret.image_id)}\n${bold("tag")}: ${italic(randomTag)}\n${link("url", ret.image_url)}`
-        });
+        await canRetrySendPhotoWithTag(ctx, this._dan, randomTag);
     }
 
 

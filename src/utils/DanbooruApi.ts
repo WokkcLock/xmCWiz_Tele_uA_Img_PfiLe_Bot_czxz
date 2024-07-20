@@ -9,6 +9,7 @@ import sql from "./Sql/index.js";
 
 
 const DanbooruBaseApiUrl = "https://danbooru.donmai.us/posts.json";
+const DanbooruGalleryBaseUrl = "https://danbooru.donmai.us/posts";
 const getLimit = 7; // 每次请求限制
 
 class DanbooruApi {
@@ -155,10 +156,8 @@ class DanbooruApi {
 
         try {
             return {
-                data: await this.getImg(res[0].media_asset.variants[3].url),
-                ext: res[0].media_asset.variants[3].file_ext,
-                id: res[0].id,
-                source_url: res[0].file_url,
+                image_data: await this.getImg(res[0].media_asset.variants[3].url),
+                dan_url: `${DanbooruGalleryBaseUrl}/${res[0].id}`,
             };
         } catch {
             throw new Error("Get image from id.");
@@ -172,13 +171,11 @@ class DanbooruApi {
             await this.updateTagCache(rating, tag);
             cacheItem = sql.SelectSingleCache(rating, tag);
         }
-        // TODO: update tag 失败时的错误处理
         assert(cacheItem != undefined);
         const imageUrl = this.getSampleUrl(cacheItem!.md5, cacheItem!.file_ext);
         const imgByte = await this.getImg(imageUrl);
         return {
-            image_id: cacheItem!.image_id,
-            image_url: imageUrl,
+            dan_url: `${DanbooruGalleryBaseUrl}/${cacheItem!.image_id}`,
             image_data: imgByte,
         }
     }

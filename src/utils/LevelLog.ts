@@ -25,32 +25,29 @@ function levelLog(level: LogLevel = LogLevel.debug, ...args: any[]) {
     if (level < minVisibeLevel) {
         return;
     }
-    let logStr: string;
     switch (level) {
         case LogLevel.debug:
-            logStr = `[${chalk.cyan('DEBUG')}] `;
-            // process.stdout.write(`[${chalk.cyan('DEBUG')}] `);
+            process.stdout.write(`[${chalk.cyan('DEBUG')}] `);
+            console.log(...args);
             break;
         case LogLevel.sql:
-            logStr = `[${chalk.cyanBright('SQL')}] `;
-            // process.stdout.write(`[${chalk.cyanBright('SQL')}] `);
+            process.stdout.write(`[${chalk.cyanBright('SQL')}] `);
+            console.log(...args);
             break;
         case LogLevel.deploy:
-            logStr = `[${chalk.greenBright('DEPLOY')}] `;
-            // process.stdout.write(`[${chalk.greenBright('DEPLOY')}] `);
+            process.stdout.write(`[${chalk.greenBright('DEPLOY')}] `);
+            console.log(...args);
             break;
         case LogLevel.warn:
-            logStr = `[${chalk.yellowBright('WARN')}] `;
-            // process.stdout.write(`[${chalk.yellowBright('WARN')}] `);
+            process.stdout.write(`[${chalk.yellowBright('WARN')}] `);
+            console.log(...args);
             break;
         default:
             // error 类型log
-            logStr = `[${chalk.redBright('ERROR')}] `;
-            // process.stdout.write(`[${chalk.redBright('ERROR')}] `);
+            process.stdout.write(`[${chalk.redBright('ERROR')}] `);
+            console.error(...args);
             break;
     }
-    process.stdout.write(logStr!);
-    console.log(...args);
 }
 
 function setLogLevel(newLogLevel: LogLevel) {
