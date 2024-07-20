@@ -1,8 +1,8 @@
 import BetterSqlite3, { Database, Statement } from "better-sqlite3";
 import { LogLevel, generateSingleLevelLog } from "../LevelLog.js";
-import { kindStrLenLimit, tableName, tagstrLenLimit } from "./PreDefine.js";
+import { createTable, kindStrLenLimit } from "./PreDefine.js";
 import fs from 'fs';
-import { AllHasNoTagError, KindAlreadyExistError, KindNameTooLongError, KindNotExistError} from "../CustomError.js";
+import { AllHasNoTagError, KindAlreadyExistError, KindNameTooLongError, KindNotExistError } from "../CustomError.js";
 import PreStmt from "./PreStmt.js";
 import { ImageFileExtEnum } from "../../type/CustomEnum.js";
 
@@ -18,70 +18,14 @@ class SqlApi {
             verbose: generateSingleLevelLog(LogLevel.sql),
         });
 
-        this.createTable();
+        createTable(this._db);
         this._db.pragma("synchronous=OFF");    // 关闭写同步, 提升性能
         this._db.pragma("journal_mode=WAL");    // 开启WAL: Write Ahead Logging
         this._preStmt = new PreStmt(this._db);
     }
 
-    private createTable() {
-        // 建表
-        this._db.exec(`
-            CREATE TABLE IF NOT EXISTS ${tableName.kind} (
-                id INTEGER PRIMARY KEY,
-                kind NVARCHAR(${kindStrLenLimit}) NOT NULL,
-                chat_id INTEGER NOT NULL, 
-                count INTEGER NOT NULL DEFAULT 0,
-                INDEX idx_${tableName.kind}_chat_id (chat_id)
-            );
-            CREATE TABLE IF NOT EXISTS ${tableName.tag} (
-                id INTEGER PRIMARY KEY,
-                kind_id INTEGER REFERENCES ${tableName.kind}(id) ON DELETE CASCADE,
-                tag VARCHAR(${tagstrLenLimit}) NOT NULL,
-                INDEX idx_${tableName.tag}_kind_id (kind_id),
-                UNIQUE (kind_id, tag)
-            );
-            CREATE TABLE IF NOT EXISTS ${tableName.cache.g} (
-                id INTEGER PRIMARY KEY,
-                tag VARCHAR(${tagstrLenLimit}) NOT NULL,
-                md5 CHAR(32) NOT NULL,
-                file_ext INTEGER NOT NULL,
-                image_id INTEGER NOT NULL,
-                INDEX idx_${tableName.cache.g}_tag (tag)
-            );
-            CREATE TABLE IF NOT EXISTS ${tableName.cache.s} (
-                id INTEGER PRIMARY KEY,
-                tag VARCHAR(${tagstrLenLimit}) NOT NULL,
-                md5 CHAR(32) NOT NULL,
-                file_ext INTEGER NOT NULL,
-                image_id INTEGER NOT NULL,
-                INDEX idx_${tableName.cache.s}_tag (tag)
-            );
-            CREATE TABLE IF NOT EXISTS ${tableName.cache.q} (
-                id INTEGER PRIMARY KEY,
-                tag VARCHAR(${tagstrLenLimit}) NOT NULL,
-                md5 CHAR(32) NOT NULL,
-                file_ext INTEGER NOT NULL,
-                image_id INTEGER NOT NULL,
-                INDEX idx_${tableName.cache.q}_tag (tag)
-            );
-            CREATE TABLE IF NOT EXISTS ${tableName.cache.e} (
-                id INTEGER PRIMARY KEY,
-                tag VARCHAR(${tagstrLenLimit}) NOT NULL,
-                md5 CHAR(32) NOT NULL,
-                file_ext INTEGER NOT NULL,
-                image_id INTEGER NOT NULL,
-                INDEX idx_${tableName.cache.e}_tag (tag)
-            );
-            CREATE TABLE IF NOT EXISTS ${tableName.cache.n} (
-                id INTEGER PRIMARY KEY,
-                tag VARCHAR(${tagstrLenLimit}) NOT NULL,
-                md5 CHAR(32) NOT NULL,
-                file_ext INTEGER NOT NULL,
-                image_id INTEGER NOT NULL,
-                INDEX idx_${tableName.cache.n}_tag (tag)
-            );
-        `);
+    CloseDb() {
+        this._db.close();
     }
 
     InsertKind(chatId: number, kind: string) {
@@ -176,7 +120,7 @@ class SqlApi {
 
     SelectSingleRandomKindTag(notEmptyKindId: number) {
         // kind其中是notEmpty的, 这里就不检查是否为undefined了
-        const ret = this._preStmt.SelectTagSingleRandom.get(notEmptyKindId) as { tag: string; }; 
+        const ret = this._preStmt.SelectTagSingleRandom.get(notEmptyKindId) as { tag: string; };
         return ret.tag;
     }
 
@@ -219,7 +163,7 @@ class SqlApi {
                 image_id: sqlRet.image_id
             }
         })();
-        
+
     }
 
     DeleteKind(chatId: number, kind: string) {

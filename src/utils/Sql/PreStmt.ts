@@ -54,7 +54,7 @@ class PreStmt {
             `INSERT INTO ${tableName.cache.e} (tag, md5, file_ext, image_id) VALUES (?, ?, ?, ?);`
         );
         this.InsertNone = this._db.prepare(
-            `INSERT INTO ${tableName.cache.n} (tag, md5, file_ext, image_id) VALUES (?, ?, ?, ?);`
+            `INSERT INTO ${tableName.cache.d} (tag, md5, file_ext, image_id) VALUES (?, ?, ?, ?);`
         );
         this.SelectGeneralCacheSingle = this._db.prepare(
             `SELECT id, md5, file_ext, image_id FROM ${tableName.cache.g} WHERE tag = ? LIMIT 1;`
@@ -69,7 +69,7 @@ class PreStmt {
             `SELECT id, md5, file_ext, image_id FROM ${tableName.cache.e} WHERE tag = ? LIMIT 1;`
         );
         this.SelectDisableCacheSingle = this._db.prepare(
-            `SELECT id, md5, file_ext, image_id FROM ${tableName.cache.n} WHERE tag = ? LIMIT 1;`
+            `SELECT id, md5, file_ext, image_id FROM ${tableName.cache.d} WHERE tag = ? LIMIT 1;`
         );
         this.SelectKindStr = this._db.prepare(
             `SELECT kind FROM ${tableName.kind} WHERE chat_id = ?;`
@@ -111,7 +111,7 @@ class PreStmt {
             `DELETE FROM ${tableName.cache.e} WHERE id = ?;`
         );
         this.DeleteDisableCache = this._db.prepare(
-            `DELETE FROM ${tableName.cache.n} WHERE id = ?;`
+            `DELETE FROM ${tableName.cache.d} WHERE id = ?;`
         );
         this.UpdateKindCountAddOffset = this._db.prepare(
             `UPDATE ${tableName.kind} SET count = count + ? WHERE id = ?;`

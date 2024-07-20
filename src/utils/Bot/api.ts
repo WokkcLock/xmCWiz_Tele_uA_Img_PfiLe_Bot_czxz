@@ -7,9 +7,8 @@ import { hydrateReply } from "@grammyjs/parse-mode";
 import { CustomConversations, cvNames } from "./CustomConversations.js";
 import { levelLog, LogLevel } from "../LevelLog.js";
 
-async function initBot(botToken: string) {
+async function initBot(botToken: string, sql: SqlApi) {
     const bot = new Bot<CusContext>(botToken);
-    const sql = new SqlApi();
     const dan = await DanbooruApi.Create(sql);
     const commandMw = new CommandMw(dan, sql);
     const cusCv = new CustomConversations();
@@ -24,7 +23,13 @@ async function initBot(botToken: string) {
 
     // 安装会话插件
     bot.use(session({
-        initial: initialSession,
+        initial(): CusSessionData {
+            return {
+                rating: undefined,
+                tagKind: "",
+                sql,
+            };
+        },
     }));
 
     // 安装对话插件

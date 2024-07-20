@@ -3,11 +3,10 @@ import SqlApi from "../Sql/SqlApi.js";
 import { levelLog, LogLevel } from "../LevelLog.js";
 import { CommandContext, InlineKeyboard, InputFile } from "grammy";
 import { bold, fmt, italic, code, link } from "@grammyjs/parse-mode";
-import { ParamKindNotExistError } from "../CustomError.js";
+import { ParamNotExistError } from "../CustomError.js";
 import MDecorator from "./MDecorator.js";
 import { ReservedApi } from "./ReservedWord.js";
 import { cvNames } from "./CustomConversations.js";
-import { assert } from "console";
 
 class CommandMw {
     private _dan: DanbooruApi;
@@ -107,7 +106,7 @@ class CommandMw {
     async ListKindTags(ctx: CommandContext<CusContext>) {
         const kind = ctx.match;
         if (kind === "") {
-            throw new ParamKindNotExistError();
+            throw new ParamNotExistError("kind");
         }
         const tags = await this._sql.SelectKindTags(ctx.chat.id, kind);
         if (tags.length == 0) {
@@ -125,7 +124,7 @@ class CommandMw {
     async AddKind(ctx: CommandContext<CusContext>) {
         const kind = ctx.match;
         if (kind === "") {
-            throw new ParamKindNotExistError();
+            throw new ParamNotExistError("kind");
         }
         if (ReservedApi.isReservedWord(kind)) {
             await ctx.replyFmt(
@@ -140,7 +139,7 @@ class CommandMw {
     @MDecorator.CusErrHanlde
     async RemoveKind(ctx: CommandContext<CusContext>) {
         if (ctx.match === "") {
-            throw new ParamKindNotExistError();
+            throw new ParamNotExistError("kind");
         }
         this._sql.DeleteKind(ctx.chat.id, ctx.match);
         ctx.replyFmt(fmt`Remove kind: ${code(ctx.match)}`);
@@ -149,7 +148,7 @@ class CommandMw {
     @MDecorator.CusErrHanlde
     async PatchKind(ctx: CommandContext<CusContext>) {
         if (ctx.match === "") {
-            throw new ParamKindNotExistError();
+            throw new ParamNotExistError("kind");
         }
         ctx.session.tagKind = ctx.match;
         ctx.session.sql = this._sql;
@@ -159,7 +158,7 @@ class CommandMw {
     @MDecorator.CusErrHanlde
     async AddTags(ctx: CommandContext<CusContext>) {
         if (ctx.match === "") {
-            throw new ParamKindNotExistError();
+            throw new ParamNotExistError("kind");
         }
         ctx.session.tagKind = ctx.match;
         ctx.session.sql = this._sql;
@@ -169,7 +168,7 @@ class CommandMw {
     @MDecorator.CusErrHanlde
     async RemoveTags(ctx: CommandContext<CusContext>) {
         if (ctx.match === "") {
-            throw new ParamKindNotExistError();
+            throw new ParamNotExistError("kind");
         }
         ctx.session.tagKind = ctx.match;
         ctx.session.sql = this._sql;
@@ -206,7 +205,7 @@ class CommandMw {
     Start(ctx: CommandContext<CusContext>) {
         ctx.replyFmt(
             fmt(
-                ["", "\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n", ""],
+                ["", "\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n"],
                 fmt`${bold("Welcome, you can use the commands below")}`,
                 fmt`/start: ${italic("print the help message")}`,
                 fmt`/tag <tag>: ${italic("get random image of the input tag")}`,

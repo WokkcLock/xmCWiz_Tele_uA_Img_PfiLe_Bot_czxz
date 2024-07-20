@@ -1,7 +1,7 @@
 import AbstractFetcher from "./Fetcher/Fetcher.js";
 import CurlFetcher from "./Fetcher/CurlFetcher.js";
 import { LogLevel, levelLog } from "./LevelLog.js";
-import { asyncSleep } from "./ToolFunc.js";
+import { asyncSleep, getRandomInt } from "./ToolFunc.js";
 import { TagFetchError } from "./CustomError.js";
 import { ImageFileExtEnum } from "../type/CustomEnum.js";
 import SqlApi from "./Sql/SqlApi.js";
@@ -69,15 +69,33 @@ class DanbooruApi {
             tags: `${tag} random:${getLimit}`,
         };
         levelLog(LogLevel.deploy, `Tags: ${params.tags}, Update map.`);
-        const res = (await this.fetchDanbooruApi(params)) as {
-            [key: string]: any;
-        }[];
+        let res: { [key: string]: any }[];
+        let failCount = 0;
+        while (failCount < 3) {
+            try {
+                res = (await this.fetchDanbooruApi(params)) as {
+                    [key: string]: any;
+                }[];
+                break;
+            } catch (err) {
+                // ... 暂时不管
+                failCount++;
+                if (failCount < 3) {
+                    await asyncSleep(500 + getRandomInt(0, 500));
+                }
+            }
+        }
+        if (failCount == 3) {
+            // ...到达失败上界
+            throw new TagFetchError(tag);
+        }
         const dataList = [] as {
             md5: string,
             file_ext: ImageFileExtEnum;
             image_id: number;
         }[];
-        for (const item of res) {
+        // TODO: 验证update逻辑
+        for (const item of res!) {
             try {
                 // variants[3]：sample
                 // 示例url: https://cdn.donmai.us/sample/82/9e/sample-829e06771f5d86491a9b44f50bdcfa92.jpg
@@ -123,7 +141,6 @@ class DanbooruApi {
                     LogLevel.warn,
                     `id: ${item.id} media_asset.variants fail.`,
                 ); // 一般来说是fail.
-                // fs.appendFileSync('Dan_er.json', JSON.stringify(item));
                 continue;
             }
         }
@@ -149,8 +166,7 @@ class DanbooruApi {
         }
     }
 
-    async GetImageFromTag(rating: Rating, tag: string) 
-    {
+    async GetImageFromTag(rating: Rating, tag: string) {
         let cacheItem = this._sql.SelectSingleCache(rating, tag);
         if (cacheItem == undefined) {
             // 更新后再次尝试

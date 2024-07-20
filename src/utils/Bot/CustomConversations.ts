@@ -12,7 +12,7 @@ class CustomConversations {
     async RmTags(conversation: CusConversation, ctx: CusContext) {
         const kind = ctx.session.tagKind
         const sql = ctx.session.sql;
-        const {id: kindId} = sql.SelectKindIdCount(ctx.chat!.id, kind);
+        const { id: kindId } = sql.SelectKindIdCount(ctx.chat!.id, kind);
         await ctx.replyFmt(
             fmt`Please input the tag you want to remove, divided by space.\n`
             + `you can just enter ${code(ReserveWord.clear)} to remove all tags or ${code(ReserveWord.exit)} to cancel.`
@@ -35,26 +35,31 @@ class CustomConversations {
     async AddTags(conversation: CusConversation, ctx: CusContext) {
         const kind = ctx.session.tagKind;
         const sql = ctx.session.sql;
-        const {id: kindId} = sql.SelectKindIdCount(ctx.chat!.id, kind);
-        await ctx.replyFmt(
-            fmt`Input the tag you want to add, divided by space\nOr you can just enter ${code(ReserveWord.exit)} to cancel.`,
-        );
-        const inputText = await conversation.form.text();
-        if (inputText == ReserveWord.exit) {
-            ctx.reply("Exit add tags action.");
-            return;
+        try {
+            const { id: kindId } = await conversation.external(() => sql.SelectKindIdCount(ctx.chat!.id, kind));
+            // const kindId = 1;
+            await ctx.replyFmt(
+                fmt`Input the tag you want to add, divided by space\nOr you can just enter ${code(ReserveWord.exit)} to cancel.`,
+            );
+            const inputText = await conversation.form.text();
+            if (inputText == ReserveWord.exit) {
+                ctx.reply("Exit add tags action.");
+                return;
+            }
+            const newTags = new Set<string>(inputText.split(" "));
+            // 插入
+            const insertCount = await conversation.external(() => sql.InsertTags(kindId, newTags));   
+            await ctx.replyFmt(fmt`add ${bold(insertCount)} tags to ${code(kind)}`);
+        } catch (err) {
+            console.error(err);
         }
-        const newTags = new Set<string>(inputText.split(" "));
-        // 插入
-        const insertCount = sql.InsertTags(kindId, newTags);   // 传入一个空的第三参数, 提升效率
-        await ctx.replyFmt(fmt`add ${bold(insertCount)} tags to ${code(kind)}`);
     }
 
 
     async PatchKind(conversation: CusConversation, ctx: CusContext) {
         const kind = ctx.session.tagKind;
         const sql = ctx.session.sql;
-        const {id: kindId, count} = sql.SelectKindIdCount(ctx.chat!.id, kind);
+        const { id: kindId, count } = sql.SelectKindIdCount(ctx.chat!.id, kind);
         await ctx.replyFmt(
             fmt`Please input new tags split by space. The new tag list will replace the old tag list of kind: ${code(kind)}.\nyou can just enter ${code(ReserveWord.exit)} to cancel.`,
         );
@@ -67,7 +72,7 @@ class CustomConversations {
         // 删除
         sql.DeleteAllKindTags(kindId);
         // 插入
-        sql.InsertTags(kindId, newTags);   
+        sql.InsertTags(kindId, newTags);
         await ctx.replyFmt(fmt`patch ${bold(newTags.size)} tags to ${code(kind)}`);
     }
 }

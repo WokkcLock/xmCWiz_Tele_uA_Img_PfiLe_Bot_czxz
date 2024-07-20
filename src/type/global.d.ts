@@ -4,6 +4,7 @@ import UserProfile from "../utils/User/UserProfile.js";
 import type { ParseModeFlavor } from "@grammyjs/parse-mode";
 import SqlApi from "../utils/Sql/SqlApi.js";
 import { ImageFileExtEnum } from "./CustomEnum.js";
+import { LogLevel } from "../utils/LevelLog.js";
 
 declare global {
     type DanbooruParams = {

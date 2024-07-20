@@ -1,4 +1,3 @@
-import { Context } from "grammy";
 import {
     KindNotExistError,
     KindAlreadyExistError,
@@ -8,14 +7,17 @@ import {
     TagFetchError,
 } from "../CustomError.js";
 
+import { fmt, bold } from "@grammyjs/parse-mode";
+import { fileLogStream } from "../LevelLog.js";
+
 class MDecorator {
     static CusErrHanlde(
         _: Object,
         key: string,
         descriptor: PropertyDescriptor,
     ) {
-        const originalMethod = descriptor.value as (ctx: Context) => any;
-        descriptor.value = async function (ctx: Context) {
+        const originalMethod = descriptor.value as (ctx: CusContext) => any;
+        descriptor.value = async function (ctx: CusContext) {
             try {
                 await originalMethod.call(this, ctx);
             } catch (err: any) {
@@ -26,15 +28,13 @@ class MDecorator {
                     || err instanceof KindAlreadyExistError
                     || err instanceof TagFetchError
                 ) {
-                    ctx.reply(`ActionFail, Reason blow\n ${err.message}`);
+                    ctx.replyFmt(fmt`${bold("Action fail")}: ${err.message}`);
                 } else if (err instanceof ParamNotExistError) {
-                    ctx.reply(`Please input the param:  \\<${err.message}\\>`, {
-                        parse_mode: "MarkdownV2",
-                    });
+                    ctx.replyFmt(fmt`the command need the param:  <${bold(err.message)}>`);
                 } else {
                     //... 其他错误
-                    console.error(err);
-                    ctx.reply(`Fail: Unexpected error.`);
+                    fileLogStream.write(err);
+                    ctx.replyFmt(fmt`${bold("Unexpected Fail")}`);
                 }
             }
         }
