@@ -24,10 +24,8 @@ async function main() {
 
   process.on("SIGINT", () => {
     console.log("");  // 换行
-
-    fileErrorLoger.clear();
     sql.CloseDb();
-
+    fileErrorLoger.clear();
     levelLog(LogLevel.deploy, "server done.");
     exit(0);
   });
