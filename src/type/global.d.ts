@@ -26,7 +26,6 @@ declare global {
     interface CusSessionData {
         rating: Rating,
         tagKind: string,
-        sql: SqlApi,
     }
 
     type CusContext = ParseModeFlavor<Context> & ConversationFlavor & SessionFlavor<CusSessionData>;

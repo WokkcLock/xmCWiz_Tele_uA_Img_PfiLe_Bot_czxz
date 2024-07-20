@@ -1,0 +1,23 @@
+GrammyError: Call to 'sendPhoto' failed! (400: Bad Request: IMAGE_PROCESS_FAILED)
+    at toGrammyError (/workspace/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/grammy/out/core/error.js:35:12)
+    at ApiClient.callApi (/workspace/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/grammy/out/core/client.js:90:48)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async CommandMw.Random (file:///workspace/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/dist/src/utils/Bot/Middleware.js:163:9)
+    at async CusErrHanlde.descriptor.value (file:///workspace/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/dist/src/utils/Bot/MDecorator.js:9:17)
+    at async /workspace/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/grammy/out/composer.js:532:13
+    at async /workspace/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/grammy/out/composer.js:61:13
+    at async /workspace/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/grammy/out/composer.js:532:13
+    at async /workspace/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/grammy/out/composer.js:61:13
+    at async /workspace/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/grammy/out/composer.js:532:13 {
+  method: 'sendPhoto',
+  payload: {
+    chat_id: 5774625122,
+    photo: 'attach://88a9pa7u1tv43exk',
+    caption: '\nimage id: 3922178\ntag: ptilopsis_(arknights)\nurl',
+    caption_entities: [ [Object], [Object], [Object], [Object], [Object] ]
+  },
+  ok: false,
+  error_code: 400,
+  description: 'Bad Request: IMAGE_PROCESS_FAILED',
+  parameters: {}
+}

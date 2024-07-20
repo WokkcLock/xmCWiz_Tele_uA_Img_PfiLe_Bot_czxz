@@ -4,25 +4,24 @@ import { LogLevel, levelLog } from "./LevelLog.js";
 import { asyncSleep, getRandomInt } from "./ToolFunc.js";
 import { TagFetchError } from "./CustomError.js";
 import { ImageFileExtEnum } from "../type/CustomEnum.js";
-import SqlApi from "./Sql/SqlApi.js";
 import { assert } from "console";
+import sql from "./Sql/index.js";
+
 
 const DanbooruBaseApiUrl = "https://danbooru.donmai.us/posts.json";
 const getLimit = 7; // 每次请求限制
 
 class DanbooruApi {
     private _fetcher: AbstractFetcher;
-    private _sql: SqlApi
 
-    private constructor(fetcher: AbstractFetcher, sqlApi: SqlApi) {
+    private constructor(fetcher: AbstractFetcher) {
         this._fetcher = fetcher;
-        this._sql = sqlApi;
     }
 
-    static async Create(sqlApi: SqlApi) {
+    static async Create() {
         const fetcher = new CurlFetcher();
         await fetcher.Init();
-        return new DanbooruApi(fetcher, sqlApi);
+        return new DanbooruApi(fetcher);
     }
 
     private getImg(url: string) {
@@ -65,8 +64,9 @@ class DanbooruApi {
     }
 
     async updateTagCache(rating: Rating, tag: string) {
+        let paramTag = rating == undefined ? tag : `${tag} rating:${rating}`;
         const params: DanbooruParams = {
-            tags: `${tag} random:${getLimit}`,
+            tags: `${paramTag} random:${getLimit}`,
         };
         levelLog(LogLevel.deploy, `Tags: ${params.tags}, Update map.`);
         let res: { [key: string]: any }[];
@@ -94,7 +94,6 @@ class DanbooruApi {
             file_ext: ImageFileExtEnum;
             image_id: number;
         }[];
-        // TODO: 验证update逻辑
         for (const item of res!) {
             try {
                 // variants[3]：sample
@@ -145,7 +144,7 @@ class DanbooruApi {
             }
         }
         // 插入数据库
-        this._sql.InsertCache(rating, tag, dataList);
+        sql.InsertCache(rating, tag, dataList);
     }
 
     async GetImageFromId(id: number) {
@@ -167,12 +166,13 @@ class DanbooruApi {
     }
 
     async GetImageFromTag(rating: Rating, tag: string) {
-        let cacheItem = this._sql.SelectSingleCache(rating, tag);
+        let cacheItem = sql.SelectSingleCache(rating, tag);
         if (cacheItem == undefined) {
             // 更新后再次尝试
             await this.updateTagCache(rating, tag);
-            cacheItem = this._sql.SelectSingleCache(rating, tag);
+            cacheItem = sql.SelectSingleCache(rating, tag);
         }
+        // TODO: update tag 失败时的错误处理
         assert(cacheItem != undefined);
         const imageUrl = this.getSampleUrl(cacheItem!.md5, cacheItem!.file_ext);
         const imgByte = await this.getImg(imageUrl);

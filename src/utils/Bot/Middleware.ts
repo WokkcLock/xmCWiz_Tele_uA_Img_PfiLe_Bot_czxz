@@ -7,13 +7,12 @@ import { ParamNotExistError } from "../CustomError.js";
 import MDecorator from "./MDecorator.js";
 import { ReservedApi } from "./ReservedWord.js";
 import { cvNames } from "./CustomConversations.js";
+import sql from "../Sql/index.js";
 
 class CommandMw {
     private _dan: DanbooruApi;
-    private _sql: SqlApi;
-    constructor(inputDan: DanbooruApi, inputSql: SqlApi) {
+    constructor(inputDan: DanbooruApi) {
         this._dan = inputDan
-        this._sql = inputSql;
     }
 
     SetRating(ctx: CommandContext<CusContext>) {
@@ -92,7 +91,7 @@ class CommandMw {
     }
 
     async ListKinds(ctx: CommandContext<CusContext>) {
-        const allKinds = this._sql.SelectAllKinds(ctx.chat.id);
+        const allKinds = sql.SelectAllKinds(ctx.chat.id);
         if (allKinds.length == 0) {
             await ctx.reply(
                 "there is still no kind, you can use /add_kind to add a kind",
@@ -108,7 +107,7 @@ class CommandMw {
         if (kind === "") {
             throw new ParamNotExistError("kind");
         }
-        const tags = await this._sql.SelectKindTags(ctx.chat.id, kind);
+        const tags = await sql.SelectKindTags(ctx.chat.id, kind);
         if (tags.length == 0) {
             await ctx.replyFmt(
                 fmt`there is still no tags in ${bold(kind)}, you can use /add_tags to add tags`,
@@ -132,7 +131,7 @@ class CommandMw {
             );
             return;
         }
-        this._sql.InsertKind(ctx.chat.id, kind);
+        sql.InsertKind(ctx.chat.id, kind);
         await ctx.replyFmt(`Add kind: ${code(kind)}`);
     }
 
@@ -141,7 +140,7 @@ class CommandMw {
         if (ctx.match === "") {
             throw new ParamNotExistError("kind");
         }
-        this._sql.DeleteKind(ctx.chat.id, ctx.match);
+        sql.DeleteKind(ctx.chat.id, ctx.match);
         ctx.replyFmt(fmt`Remove kind: ${code(ctx.match)}`);
     }
 
@@ -151,7 +150,6 @@ class CommandMw {
             throw new ParamNotExistError("kind");
         }
         ctx.session.tagKind = ctx.match;
-        ctx.session.sql = this._sql;
         await ctx.conversation.enter(cvNames.patchKind);
     }
 
@@ -161,7 +159,6 @@ class CommandMw {
             throw new ParamNotExistError("kind");
         }
         ctx.session.tagKind = ctx.match;
-        ctx.session.sql = this._sql;
         await ctx.conversation.enter(cvNames.addTags);
     }
 
@@ -171,7 +168,6 @@ class CommandMw {
             throw new ParamNotExistError("kind");
         }
         ctx.session.tagKind = ctx.match;
-        ctx.session.sql = this._sql;
         await ctx.conversation.enter(cvNames.rmTags);
     }
 
@@ -181,10 +177,10 @@ class CommandMw {
         let tagsCount: number;
         if (ctx.match == "") {
             // 在所有kind中随机
-            ({ id: kindId, count: tagsCount } = this._sql.SelectNotEmptyKindIdRandomSingle(ctx.chat.id));
+            ({ id: kindId, count: tagsCount } = sql.SelectNotEmptyKindIdRandomSingle(ctx.chat.id));
         } else {
             // 直接选择输入的kind
-            ({ id: kindId, count: tagsCount } = this._sql.SelectKindIdCount(ctx.chat.id, ctx.match));
+            ({ id: kindId, count: tagsCount } = sql.SelectKindIdCount(ctx.chat.id, ctx.match));
             if (tagsCount == 0) {
                 await ctx.replyFmt(
                     fmt`there is still no tags in ${bold(ctx.match)}, you can use /add_tags to add tags`,
@@ -194,7 +190,7 @@ class CommandMw {
         }
 
         // 一个合法的kindId和tagsCount
-        const randomTag = this._sql.SelectSingleRandomKindTag(kindId);
+        const randomTag = sql.SelectSingleRandomKindTag(kindId);
         const ret = await this._dan.GetImageFromTag(ctx.session.rating, randomTag);
         await ctx.replyFmtWithPhoto(new InputFile(ret.image_data), {
             caption: fmt`\n${bold("image id")}: ${italic(ret.image_id)}\n${bold("tag")}: ${italic(randomTag)}\n${link("url", ret.image_url)}`
@@ -205,9 +201,10 @@ class CommandMw {
     Start(ctx: CommandContext<CusContext>) {
         ctx.replyFmt(
             fmt(
-                ["", "\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n"],
+                ["", "\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n", "\n"],
                 fmt`${bold("Welcome, you can use the commands below")}`,
                 fmt`/start: ${italic("print the help message")}`,
+                fmt`/set_rating: ${italic("set the rating of image.")}`,
                 fmt`/tag <tag>: ${italic("get random image of the input tag")}`,
                 fmt`/id <id>: ${italic("get certain image of the id")}`,
                 fmt`/list_kinds: ${italic("list all kinds you set")}`,

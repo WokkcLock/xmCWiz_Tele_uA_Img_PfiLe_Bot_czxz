@@ -7,27 +7,18 @@ import { hydrateReply } from "@grammyjs/parse-mode";
 import { CustomConversations, cvNames } from "./CustomConversations.js";
 import { levelLog, LogLevel } from "../LevelLog.js";
 
-async function initBot(botToken: string, sql: SqlApi) {
+async function initBot(botToken: string) {
     const bot = new Bot<CusContext>(botToken);
-    const dan = await DanbooruApi.Create(sql);
-    const commandMw = new CommandMw(dan, sql);
+    const dan = await DanbooruApi.Create();
+    const commandMw = new CommandMw(dan);
     const cusCv = new CustomConversations();
-
-    function initialSession(): CusSessionData {
-        return {
-            rating: undefined,
-            tagKind: "",
-            sql,
-        };
-    }
 
     // 安装会话插件
     bot.use(session({
         initial(): CusSessionData {
             return {
                 rating: undefined,
-                tagKind: "",
-                sql,
+                tagKind: ""
             };
         },
     }));

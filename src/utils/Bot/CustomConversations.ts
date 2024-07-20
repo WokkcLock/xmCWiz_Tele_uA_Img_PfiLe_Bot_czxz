@@ -1,5 +1,6 @@
 import { ReserveWord } from "./ReservedWord.js";
 import { fmt, bold, code } from "@grammyjs/parse-mode";
+import sql from "../Sql/index.js";
 
 const cvNames = {
     addTags: "addTags",
@@ -11,8 +12,7 @@ class CustomConversations {
 
     async RmTags(conversation: CusConversation, ctx: CusContext) {
         const kind = ctx.session.tagKind
-        const sql = ctx.session.sql;
-        const { id: kindId } = sql.SelectKindIdCount(ctx.chat!.id, kind);
+        const { id: kindId } = await conversation.external(() => sql.SelectKindIdCount(ctx.chat!.id, kind));
         await ctx.replyFmt(
             fmt`Please input the tag you want to remove, divided by space.\n`
             + `you can just enter ${code(ReserveWord.clear)} to remove all tags or ${code(ReserveWord.exit)} to cancel.`
@@ -28,13 +28,12 @@ class CustomConversations {
         }
         const inputTags = new Set<string>(inputText.split(" "));
         // 删除
-        const deleteCount = sql.DeleteKindTags(kindId, inputTags);
+        const deleteCount = await conversation.external(() => sql.DeleteKindTags(kindId, inputTags));
         await ctx.replyFmt(fmt`remove ${bold(deleteCount)} tags from ${code(kind)}`);
     }
 
     async AddTags(conversation: CusConversation, ctx: CusContext) {
         const kind = ctx.session.tagKind;
-        const sql = ctx.session.sql;
         try {
             const { id: kindId } = await conversation.external(() => sql.SelectKindIdCount(ctx.chat!.id, kind));
             // const kindId = 1;
@@ -58,8 +57,7 @@ class CustomConversations {
 
     async PatchKind(conversation: CusConversation, ctx: CusContext) {
         const kind = ctx.session.tagKind;
-        const sql = ctx.session.sql;
-        const { id: kindId, count } = sql.SelectKindIdCount(ctx.chat!.id, kind);
+        const { id: kindId } = await conversation.external(() => sql.SelectKindIdCount(ctx.chat!.id, kind));
         await ctx.replyFmt(
             fmt`Please input new tags split by space. The new tag list will replace the old tag list of kind: ${code(kind)}.\nyou can just enter ${code(ReserveWord.exit)} to cancel.`,
         );
@@ -70,9 +68,9 @@ class CustomConversations {
         }
         const newTags = new Set<string>(inputText.split(" "));
         // 删除
-        sql.DeleteAllKindTags(kindId);
+        await conversation.external(() => sql.DeleteAllKindTags(kindId));
         // 插入
-        sql.InsertTags(kindId, newTags);
+        await conversation.external(() => sql.InsertTags(kindId, newTags));
         await ctx.replyFmt(fmt`patch ${bold(newTags.size)} tags to ${code(kind)}`);
     }
 }

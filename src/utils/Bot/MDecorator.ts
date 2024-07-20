@@ -8,7 +8,7 @@ import {
 } from "../CustomError.js";
 
 import { fmt, bold } from "@grammyjs/parse-mode";
-import { fileLogStream } from "../LevelLog.js";
+import { fileErrorLoger } from "../LevelLog.js";
 
 class MDecorator {
     static CusErrHanlde(
@@ -33,7 +33,7 @@ class MDecorator {
                     ctx.replyFmt(fmt`the command need the param:  <${bold(err.message)}>`);
                 } else {
                     //... 其他错误
-                    fileLogStream.write(err);
+                    fileErrorLoger.error(err);
                     ctx.replyFmt(fmt`${bold("Unexpected Fail")}`);
                 }
             }

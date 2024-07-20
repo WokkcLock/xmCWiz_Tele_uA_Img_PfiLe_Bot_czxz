@@ -148,22 +148,19 @@ class SqlApi {
                 selectStmt = this._preStmt.SelectDisableCacheSingle;
                 rmStmt = this._preStmt.DeleteDisableCache;
         }
-        return this._db.transaction(() => {
-            const sqlRet = selectStmt.get(tag) as { id: number, md5: string, file_ext: ImageFileExtEnum, image_id: number } | undefined;
-            if (sqlRet == undefined) {
-                // cache不足
-                return undefined;
-            }
-            // 成功获取到cache
-            // 删除该cache
-            rmStmt.run(sqlRet.id);
-            return {
-                md5: sqlRet.md5,
-                file_ext: sqlRet.file_ext,
-                image_id: sqlRet.image_id
-            }
-        })();
-
+        const sqlRet = selectStmt.get(tag) as { id: number, md5: string, file_ext: ImageFileExtEnum, image_id: number } | undefined;
+        if (sqlRet == undefined) {
+            // cache不足
+            return undefined;
+        }
+        // 成功获取到cache
+        // 删除该cache
+        rmStmt.run(sqlRet.id);
+        return {
+            md5: sqlRet.md5,
+            file_ext: sqlRet.file_ext,
+            image_id: sqlRet.image_id
+        }
     }
 
     DeleteKind(chatId: number, kind: string) {

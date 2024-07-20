@@ -8,9 +8,9 @@
  */
 import { initBot } from "./utils/Bot/api.js";
 import * as readlineSync from "readline-sync";
-import { fileLogStream, setLogLevel ,levelLog, LogLevel } from "./utils/LevelLog.js";
+import { fileErrorLoger, setLogLevel ,levelLog, LogLevel } from "./utils/LevelLog.js";
 import { exit } from "process";
-import SqlApi from "./utils/Sql/SqlApi.js";
+import sql from "./utils/Sql/index.js";
 
 async function main() {
   const args = process.argv.slice(2);
@@ -23,12 +23,11 @@ async function main() {
     botToken = args[0];
   }
   */
-  const sql = new SqlApi();
 
   process.on("SIGINT", () => {
     console.log("");  // 换行
 
-    fileLogStream.close();
+    fileErrorLoger.clear();
     sql.CloseDb();
 
     levelLog(LogLevel.deploy, "server done.");
@@ -36,7 +35,7 @@ async function main() {
   });
 
   botToken = "6674632195:AAGJkpv30CCIig-sTj2Qa4mPUfJ94oEqAsA";  
-  const bot = await initBot(botToken, sql);
+  const bot = await initBot(botToken);
   bot.start();
   levelLog(LogLevel.deploy, "Bot start.");
   return;

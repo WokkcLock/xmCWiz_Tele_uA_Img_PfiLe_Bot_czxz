@@ -9,7 +9,7 @@ enum LogLevel {
 }
 
 let minVisibeLevel = LogLevel.debug;
-let fileLogStream = fs.createWriteStream("error.log", {
+const fileLogStream = fs.createWriteStream("error.log", {
     flags: 'w',     //文件的打开模式
     mode: 0o666,    //文件的权限设置
     encoding: "utf8",   //写入文件的字符的编码
@@ -17,6 +17,8 @@ let fileLogStream = fs.createWriteStream("error.log", {
     start: 0, //写入文件的起始索引位置        
     autoClose: true//是否自动关闭文档
 });
+
+const fileErrorLoger = new console.Console(fileLogStream);
 
 
 function levelLog(level: LogLevel = LogLevel.debug, ...args: any[]) {
@@ -62,4 +64,4 @@ function generateSingleLevelLog(level: LogLevel) {
     }
 }
 
-export { levelLog, LogLevel, setLogLevel, fileLogStream, generateSingleLevelLog };
+export { levelLog, LogLevel, setLogLevel, fileErrorLoger, generateSingleLevelLog };
