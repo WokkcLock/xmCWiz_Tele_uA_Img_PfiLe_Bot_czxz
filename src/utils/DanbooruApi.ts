@@ -5,7 +5,7 @@ import { asyncSleep, getRandomInt } from "./ToolFunc.js";
 import { TagFetchError } from "./CustomError.js";
 import { ImageFileExtEnum } from "../type/CustomEnum.js";
 import { assert } from "console";
-import sql from "./Sql";
+import sql from "./Sql/index.js";
 
 
 const DanbooruBaseApiUrl = "https://danbooru.donmai.us/posts.json";

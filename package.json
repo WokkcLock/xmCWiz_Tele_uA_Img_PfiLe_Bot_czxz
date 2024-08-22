@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "dev": "tsc && node --experimental-specifier-resolution=node dist/src/index.js",
+    "dev": "tsc && node dist/src/index.js",
     "clean": "rimraf dist"
   },
   "devDependencies": {
