@@ -6,7 +6,7 @@ import { ParamNotExistError } from "../CustomError.js";
 import MDecorator from "./MDecorator.js";
 import { ReservedApi } from "./ReservedWord.js";
 import { cvNames } from "./CustomConversations.js";
-import sql from "../Sql/index.js";
+import sql from "../Sql";
 
 const retryUpLimit = 3;
 

@@ -6,11 +6,11 @@
  * @FilePath: /xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/src/index.ts
  * @Description: 
  */
-import { initBot } from "./utils/Bot/api.js";
+import initBot from "./utils/Bot";
 import * as readlineSync from "readline-sync";
 import { fileErrorLoger, setLogLevel ,levelLog, LogLevel } from "./utils/LevelLog.js";
 import { exit } from "process";
-import sql from "./utils/Sql/index.js";
+import sql from "./utils/Sql";
 
 async function main() {
   const args = process.argv.slice(2);

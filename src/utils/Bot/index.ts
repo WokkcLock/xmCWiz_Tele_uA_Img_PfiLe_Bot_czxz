@@ -74,4 +74,4 @@ async function initBot(botToken: string) {
     return bot;
 }
 
-export { initBot };
+export default initBot;

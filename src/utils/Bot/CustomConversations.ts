@@ -1,6 +1,6 @@
 import { ReserveWord } from "./ReservedWord.js";
 import { fmt, bold, code } from "@grammyjs/parse-mode";
-import sql from "../Sql/index.js";
+import sql from "../Sql";
 
 const cvNames = {
     addTags: "addTags",
