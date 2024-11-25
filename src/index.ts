@@ -6,21 +6,24 @@
  * @FilePath: /xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/src/index.ts
  * @Description: 
  */
-import initBot from "./utils/Bot/index.js";
+import { initBot } from "./Bot/index.js";
 import * as readlineSync from "readline-sync";
-import { fileErrorLoger, setLogLevel ,levelLog, LogLevel } from "./utils/LevelLog.js";
+import { fileErrorLoger, setLogLevel, levelLog, LogLevel } from "./utils/LevelLog.js";
 import { exit } from "process";
-import sql from "./utils/Sql/index.js";
+import SqlApi from "./SqlApi/index.js";
+
+const sql = SqlApi.GetInstance();
 
 async function main() {
   const args = process.argv.slice(2);
   let botToken: string;
   setLogLevel(LogLevel.debug);
-  if (args.length == 0) {
-    botToken = readlineSync.question("Please input your bot token: ");
-  } else {
-    botToken = args[0];
-  }
+  // if (args.length == 0) {
+  //   botToken = readlineSync.question("Please input your bot token: ");
+  // } else {
+  //   botToken = args[0];
+  // }
+  botToken = "6674632195:AAGJkpv30CCIig-sTj2Qa4mPUfJ94oEqAsA";
 
   process.on("SIGINT", () => {
     console.log("");  // 换行

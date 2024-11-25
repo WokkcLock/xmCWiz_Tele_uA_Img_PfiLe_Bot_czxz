@@ -4,7 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "dev": "tsc && node dist/src/index.js",
+    "start": "tsc && node dist/src/index.js",
+    "dev": "tsx src/index.ts",
     "clean": "rimraf dist"
   },
   "devDependencies": {

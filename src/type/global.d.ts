@@ -2,7 +2,7 @@ import { Context, SessionFlavor } from "grammy";
 import { type ConversationFlavor, type Conversation } from "@grammyjs/conversations";
 import UserProfile from "../utils/User/UserProfile.js";
 import type { ParseModeFlavor } from "@grammyjs/parse-mode";
-import SqlApi from "../utils/Sql/SqlApi.js";
+import SqlApi from "../SqlApi/index.js";
 import { ImageFileExtEnum } from "./CustomEnum.js";
 import { LogLevel } from "../utils/LevelLog.js";
 
@@ -21,7 +21,7 @@ declare global {
         timer: NodeJS.Timeout,
         isWrited: boolean,
     }
-    type Rating = 'g' | 's' | 'q' | 'e' | undefined;
+    type Rating = 'general' | 'sensitive' | 'questionable' | 'explicit' | undefined;
 
     interface CusSessionData {
         rating: Rating,

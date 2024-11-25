@@ -1,11 +1,13 @@
 import AbstractFetcher from "./Fetcher/Fetcher.js";
 import CurlFetcher from "./Fetcher/CurlFetcher.js";
-import { LogLevel, levelLog } from "./LevelLog.js";
-import { asyncSleep, getRandomInt } from "./ToolFunc.js";
-import { TagFetchError } from "./CustomError.js";
+import { LogLevel, levelLog } from "../utils/LevelLog.js";
+import { asyncSleep, getRandomInt } from "../utils/ToolFunc.js";
+import { TagFetchError } from "../utils/CustomError.js";
 import { ImageFileExtEnum } from "../type/CustomEnum.js";
 import { assert } from "console";
-import sql from "./Sql/index.js";
+import SqlApi from "../SqlApi/index.js";
+
+const sql = SqlApi.GetInstance();
 
 
 const DanbooruBaseApiUrl = "https://danbooru.donmai.us/posts.json";
@@ -13,10 +15,19 @@ const DanbooruGalleryBaseUrl = "https://danbooru.donmai.us/posts";
 const getLimit = 7; // 每次请求限制
 
 class DanbooruApi {
+    private static _instance: DanbooruApi | undefined = undefined;
+
     private _fetcher: AbstractFetcher;
 
     private constructor(fetcher: AbstractFetcher) {
         this._fetcher = fetcher;
+    }
+
+    static async GetInstance() {
+        if (DanbooruApi._instance == undefined) {
+            DanbooruApi._instance = await DanbooruApi.Create();
+        }
+        return DanbooruApi._instance;
     }
 
     static async Create() {
@@ -65,7 +76,7 @@ class DanbooruApi {
     }
 
     async updateTagCache(rating: Rating, tag: string) {
-        let paramTag = rating == undefined ? tag : `${tag} rating:${rating}`;
+        let paramTag = rating == undefined ? tag : `${tag} rating:${rating[0]}`;
         const params: DanbooruParams = {
             tags: `${paramTag} random:${getLimit}`,
         };

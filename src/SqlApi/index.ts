@@ -1,16 +1,25 @@
 import BetterSqlite3, { Database, Statement } from "better-sqlite3";
-import { LogLevel, generateSingleLevelLog } from "../LevelLog.js";
+import { LogLevel, generateSingleLevelLog } from "../utils/LevelLog.js";
 import { createTable, kindStrLenLimit } from "./PreDefine.js";
 import fs from 'fs';
-import { AllHasNoTagError, KindAlreadyExistError, KindNameTooLongError, KindNotExistError } from "../CustomError.js";
+import { AllHasNoTagError, KindAlreadyExistError, KindNameTooLongError, KindNotExistError } from "../utils/CustomError.js";
 import PreStmt from "./PreStmt.js";
-import { ImageFileExtEnum } from "../../type/CustomEnum.js";
+import { ImageFileExtEnum } from "../type/CustomEnum.js";
 
 
 class SqlApi {
+    private static _instance: SqlApi | undefined = undefined;
     private _db: Database;
     private _preStmt: PreStmt;
-    constructor() {
+
+    static GetInstance() {
+        if (SqlApi._instance == undefined) {
+            SqlApi._instance = new SqlApi();
+        }
+        return SqlApi._instance;
+    }
+
+    private constructor() {
         if (!fs.existsSync("private")) {
             fs.mkdirSync("private");
         }
@@ -61,16 +70,16 @@ class SqlApi {
     InsertCache(rating: Rating, tag: string, cacheList: { md5: string, file_ext: ImageFileExtEnum, image_id: number }[]) {
         let stmt: Statement;
         switch (rating) {
-            case "g":
+            case "general":
                 stmt = this._preStmt.InsertGeneral;
                 break;
-            case "s":
+            case "sensitive":
                 stmt = this._preStmt.InsertSensitive;
                 break;
-            case "q":
+            case "questionable":
                 stmt = this._preStmt.InsertQuestionable;
                 break;
-            case "e":
+            case "explicit":
                 stmt = this._preStmt.InsertExplicit;
                 break;
             default:
@@ -128,19 +137,19 @@ class SqlApi {
         let selectStmt: Statement;
         let rmStmt: Statement;
         switch (rating) {
-            case "g":
+            case "general":
                 selectStmt = this._preStmt.SelectGeneralCacheSingle;
                 rmStmt = this._preStmt.DeleteGeneralCache;
                 break;
-            case "s":
+            case "sensitive":
                 selectStmt = this._preStmt.SelectSensitiveCacheSingle;
                 rmStmt = this._preStmt.DeleteSensitiveCache;
                 break;
-            case "q":
+            case "questionable":
                 selectStmt = this._preStmt.SelectQuestionableCacheSingle;
                 rmStmt = this._preStmt.DeleteQuestionableCache;
                 break;
-            case "e":
+            case "explicit":
                 selectStmt = this._preStmt.SelectExplicitCacheSingle;
                 rmStmt = this._preStmt.DeleteExplicitCache;
                 break;
