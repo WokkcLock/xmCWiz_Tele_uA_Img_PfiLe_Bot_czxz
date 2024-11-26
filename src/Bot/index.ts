@@ -1,7 +1,7 @@
 import { Bot, session } from "grammy";
-import { conversations, createConversation } from "@grammyjs/conversations";
+import { conversations } from "@grammyjs/conversations";
 import { bold, fmt, hydrateReply } from "@grammyjs/parse-mode";
-import { AddTags, RmTags, PatchKind, cvNames } from "./CustomConversations.js";
+import { initAllConversation } from "./CustomConversations.js";
 import { fileErrorLoger, levelLog, LogLevel } from "../utils/LevelLog.js";
 import mainComposer from "./composers/mainComposer.js";
 import { KindNotExistError, KindAlreadyExistError, EmptyKindError, AllHasNoTagError, ParamNotExistError, TagFetchError } from "../utils/CustomError.js";
@@ -25,9 +25,7 @@ async function initBot(botToken: string) {
 
 
     // 安装对话
-    bot.use(createConversation(AddTags, cvNames.addTags));
-    bot.use(createConversation(RmTags, cvNames.rmTags));
-    bot.use(createConversation(PatchKind, cvNames.patchKind));
+    initAllConversation(bot);
 
     // 安装中间件
     bot.use(mainComposer);
