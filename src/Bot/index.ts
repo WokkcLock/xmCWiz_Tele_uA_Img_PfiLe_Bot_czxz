@@ -20,12 +20,11 @@ async function initBot(botToken: string) {
     // 安装对话插件
     bot.use(conversations());
 
-    // 安装格式化插件
-    bot.use(hydrateReply);
-
-
     // 安装对话
     initAllConversation(bot);
+
+    // 安装格式化插件
+    bot.use(hydrateReply);
 
     // 安装中间件
     bot.use(mainComposer);
