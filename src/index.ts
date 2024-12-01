@@ -18,12 +18,11 @@ async function main() {
   const args = process.argv.slice(2);
   let botToken: string;
   setLogLevel(LogLevel.debug);
-  // if (args.length == 0) {
-  //   botToken = readlineSync.question("Please input your bot token: ");
-  // } else {
-  //   botToken = args[0];
-  // }
-  botToken = "6674632195:AAGJkpv30CCIig-sTj2Qa4mPUfJ94oEqAsA";
+  if (args.length == 0) {
+    botToken = readlineSync.question("Please input your bot token: ");
+  } else {
+    botToken = args[0];
+  }
 
   process.on("SIGINT", () => {
     console.log("");  // 换行
