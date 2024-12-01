@@ -1,10 +1,10 @@
 import { Bot, session } from "grammy";
-import { conversations } from "@grammyjs/conversations";
 import { bold, fmt, hydrateReply } from "@grammyjs/parse-mode";
-import { initAllConversation } from "./CustomConversations.js";
 import { fileErrorLoger, levelLog, LogLevel } from "../utils/LevelLog.js";
 import mainComposer from "./composers/mainComposer.js";
 import { KindNotExistError, KindAlreadyExistError, EmptyKindError, AllHasNoTagError, ParamNotExistError, TagFetchError } from "../utils/CustomError.js";
+import { ClientStateEnum } from "../type/CustomEnum.js";
+import { freeStorage } from "@grammyjs/storage-free";
 
 async function initBot(botToken: string) {
     const bot = new Bot<CusContext>(botToken);
@@ -13,15 +13,12 @@ async function initBot(botToken: string) {
         initial(): CusSessionData {
             return {
                 rating: undefined,
-                tagKind: ""
+                state: ClientStateEnum.default,
+                actionKindId: -1,
             };
         },
+        storage: freeStorage<CusSessionData>(botToken)
     }));
-    // 安装对话插件
-    bot.use(conversations());
-
-    // 安装对话
-    initAllConversation(bot);
 
     // 安装格式化插件
     bot.use(hydrateReply);
