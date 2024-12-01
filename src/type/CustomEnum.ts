@@ -7,11 +7,3 @@ export enum ImageFileExtEnum {
     svg,
     webp,
 };
-
-
-export enum ClientStateEnum {
-    default, 
-    remove,
-    patch,
-    add,
-}

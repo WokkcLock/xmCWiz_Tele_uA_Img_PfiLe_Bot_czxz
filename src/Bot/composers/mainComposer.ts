@@ -26,8 +26,8 @@ mainComposer.command("start", ctx => {
     );
 });
 
-mainComposer.use(danComposer);
 mainComposer.use(controlComposer);
 
+mainComposer.use(danComposer);
 
 export default mainComposer;

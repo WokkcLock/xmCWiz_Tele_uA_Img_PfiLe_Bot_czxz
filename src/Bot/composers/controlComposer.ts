@@ -3,10 +3,9 @@ import { InlineKeyboard } from "grammy";
 import { fmt, bold, italic, code } from "@grammyjs/parse-mode";
 import { ParamNotExistError } from "../../utils/CustomError.js";
 import { ReservedApi } from "../../utils/Helper/ReservedWord.js";
+import { cvNames } from "../CustomConversations.js";
 import SqlApi from "../../SqlApi/index.js";
 import { levelLog, LogLevel } from "../../utils/LevelLog.js";
-import { ClientStateEnum } from "../../type/CustomEnum.js";
-import { ReserveWord } from "../../utils/Helper/ReservedWord.js";
 
 const sql = SqlApi.GetInstance();
 const controlComposer = new Composer<CusContext>();
@@ -61,7 +60,7 @@ controlComposer.command("list_tags", ctx => {
         return;
     }
     ctx.replyFmt(
-        fmt`${bold("[Kind]")}:  ${code(kind)}\n${bold("[tags]")}:  ${tags.map(tag => code(tag)).join(" ")}\n${bold("[count]:")} ${tags.length}`
+        fmt`${bold("[Kind]")}:  ${code(kind)}\n${bold("[tags]")}:  ${tags.map(tag => code(tag)).join(" ")}`
     );
 });
 
@@ -92,12 +91,8 @@ controlComposer.command("patch_kind", async (ctx) => {
     if (ctx.match === "") {
         throw new ParamNotExistError("kind");
     }
-    const { id: kindId } = sql.SelectKindIdCount(ctx.chat!.id, ctx.match);   // 确认kind存在
-    ctx.session.actionKindId = kindId;
-    ctx.session.state = ClientStateEnum.patch;
-    ctx.replyFmt(
-        fmt`Please input new tags split by space. The new tag list will replace the old tag list.\nyou can just enter ${code(ReserveWord.exit)} to cancel.`,
-    );
+    ctx.session.tagKind = ctx.match;
+    await ctx.conversation.enter(cvNames.patchKind);
 });
 
 
@@ -105,71 +100,17 @@ controlComposer.command("add_tags", async (ctx) => {
     if (ctx.match === "") {
         throw new ParamNotExistError("kind");
     }
-    const { id: kindId } = sql.SelectKindIdCount(ctx.chat!.id, ctx.match);   // 确认kind存在
-    ctx.session.actionKindId = kindId;
-    ctx.session.state = ClientStateEnum.add;
-    await ctx.replyFmt(
-        fmt`Input the tag you want to add, divided by space\nOr you can just enter ${code(ReserveWord.exit)} to cancel.`,
-    );
+    ctx.session.tagKind = ctx.match;
+    await ctx.conversation.enter(cvNames.addTags);
 })
 
 controlComposer.command("rm_tags", async (ctx) => {
     if (ctx.match === "") {
         throw new ParamNotExistError("kind");
     }
-    const { id: kindId } = sql.SelectKindIdCount(ctx.chat!.id, ctx.match);   // 确认kind存在
-    ctx.session.actionKindId = kindId;
-    ctx.session.state = ClientStateEnum.remove;
-    ctx.replyFmt(
-        fmt`Please input the tag you want to remove, divided by space.\nyou can just enter ${code(ReserveWord.clear)} to remove all tags or ${code(ReserveWord.exit)} to cancel.`
-    );
+    ctx.session.tagKind = ctx.match;
+    await ctx.conversation.enter(cvNames.rmTags);
 });
-
-
-// 用于取代对话的处理
-controlComposer.on("message:text", async ctx => {
-    levelLog(LogLevel.debug, `recv text: ${ctx.message.text}`);
-    if (ctx.session.state == ClientStateEnum.default) {
-        return;
-    }
-    const text = ctx.message.text as string;
-    const kindId = ctx.session.actionKindId;
-    if (text == ReserveWord.exit) {
-        ctx.reply("action exit.");
-        return;
-    }
-    switch (ctx.session.state) {
-        case ClientStateEnum.add:
-            // 添加
-            const tagsToAdd = new Set<string>(text.split(" "));
-            const insertCount = sql.InsertTags(kindId, tagsToAdd);
-            await ctx.replyFmt(fmt`add tags, count: ${bold(insertCount)}. }`);
-            break;
-        case ClientStateEnum.remove:
-            // 删除
-            if (text == ReserveWord.clear) {
-                sql.DeleteAllKindTags(kindId);
-                ctx.reply("All tags have been remove.");
-            } else {
-                 const inputTags = new Set<string>(text.split(" "));
-                // 删除
-                const deleteCount = sql.DeleteKindTags(kindId, inputTags);
-                ctx.replyFmt(fmt`remove tags, count: ${bold(deleteCount)}}`);
-            }
-            break;
-        case ClientStateEnum.patch:
-            // // 覆盖
-            const newTags = new Set<string>(text.split(" "));
-            sql.DeleteAllKindTags(kindId);
-            sql.InsertTags(kindId, newTags);
-            ctx.replyFmt(fmt`patch tags, new tags count: ${bold(newTags.size)} `);
-            break;
-        default:
-            // 理论上不会到这里
-            throw new Error("Unknown ClientState");
-    };
-    ctx.session.state = ClientStateEnum.default;
-})
 
 controlComposer.on("callback_query:data", async ctx => {
     const callbackData = ctx.callbackQuery.data;
@@ -194,6 +135,11 @@ controlComposer.on("callback_query:data", async ctx => {
             await ctx.answerCallbackQuery(); // 移除加载动画
             return;
     }
+});
+
+
+controlComposer.command("rmTags", async ctx => {
+    
 });
 
 
