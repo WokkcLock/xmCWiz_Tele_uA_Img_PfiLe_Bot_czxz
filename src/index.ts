@@ -11,6 +11,7 @@ import * as readlineSync from "readline-sync";
 import { fileErrorLoger, setLogLevel, levelLog, LogLevel } from "./utils/LevelLog.js";
 import { exit } from "process";
 import SqlApi from "./SqlApi/index.js";
+import { NewSqlApi } from "./SqlApi/index.js";
 
 const sql = SqlApi.GetInstance();
 
@@ -38,4 +39,13 @@ async function main() {
   return;
 }
 
-main();
+// main();
+
+async function te() {
+  const sql = NewSqlApi.GetInstance();
+  // await sql.InsertKind(111, "sasas");
+  await sql.InsertTags(1, new Set<string>(["aca", "bka"]));
+  console.log("done..");
+}
+
+te();

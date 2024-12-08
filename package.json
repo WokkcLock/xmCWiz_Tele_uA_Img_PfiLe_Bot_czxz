@@ -12,6 +12,7 @@
     "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^20.11.4",
     "@types/readline-sync": "^1.4.8",
+    "drizzle-kit": "^0.29.1",
     "rimraf": "^5.0.5"
   },
   "type": "module",
@@ -20,6 +21,8 @@
     "@grammyjs/storage-free": "^2.4.2",
     "better-sqlite3": "^9.4.3",
     "chalk": "^5.3.0",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.37.0",
     "form-data": "^4.0.0",
     "grammy": "^1.20.3",
     "readline-sync": "^1.4.10"
