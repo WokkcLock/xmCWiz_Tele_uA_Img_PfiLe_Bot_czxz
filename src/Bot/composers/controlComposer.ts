@@ -1,12 +1,12 @@
 import { Composer } from "grammy";
 import { InlineKeyboard } from "grammy";
 import { fmt, bold, italic, code } from "@grammyjs/parse-mode";
-import { ParamNotExistError } from "../../utils/CustomError.js";
 import { ReservedApi } from "../../utils/Helper/ReservedWord.js";
 import SqlApi from "../../SqlApi/index.js";
 import { levelLog, LogLevel } from "../../utils/LevelLog.js";
 import { ClientStateEnum } from "../../type/CustomEnum.js";
 import { ReserveWord } from "../../utils/Helper/ReservedWord.js";
+import { ParamNotExistHandle } from "../Helper/ToolFunc.js";
 
 const sql = SqlApi.GetInstance();
 const controlComposer = new Composer<CusContext>();
@@ -37,8 +37,8 @@ controlComposer.command("set_rating", ctx => {
     );
 });
 
-controlComposer.command("list_kinds", ctx => {
-    const allKinds = sql.SelectAllKinds(ctx.chat.id);
+controlComposer.command("list_kinds", async ctx => {
+    const allKinds = await sql.SelectAllKinds(ctx.chat.id);
     if (allKinds.length == 0) {
         ctx.reply(
             "there is still no kind, you can use /add_kind to add a kind",
@@ -48,12 +48,13 @@ controlComposer.command("list_kinds", ctx => {
     ctx.replyFmt(fmt`${allKinds.map(kind => code(kind)).join(" ")}`);
 });
 
-controlComposer.command("list_tags", ctx => {
+controlComposer.command("list_tags", async ctx => {
     const kind = ctx.match;
     if (kind === "") {
-        throw new ParamNotExistError("kind");
+        ParamNotExistHandle(ctx, "kind");
+        return;
     }
-    const tags = sql.SelectKindTags(ctx.chat.id, kind);
+    const tags = await sql.SelectKindTags(ctx.chat.id, kind);
     if (tags.length == 0) {
         ctx.replyFmt(
             fmt`there is still no tags in ${bold(kind)}, you can use /add_tags to add tags`,
@@ -68,7 +69,8 @@ controlComposer.command("list_tags", ctx => {
 controlComposer.command("add_kind", ctx => {
     const kind = ctx.match;
     if (kind === "") {
-        throw new ParamNotExistError("kind");
+        ParamNotExistHandle(ctx, "kind");
+        return;
     }
     if (ReservedApi.isReservedWord(kind)) {
         ctx.replyFmt(
@@ -82,17 +84,19 @@ controlComposer.command("add_kind", ctx => {
 
 controlComposer.command("rm_kind", ctx => {
     if (ctx.match === "") {
-        throw new ParamNotExistError("kind");
+        ParamNotExistHandle(ctx, "kind");
+        return;
     }
     sql.DeleteKind(ctx.chat.id, ctx.match);
     ctx.replyFmt(fmt`Remove kind: ${code(ctx.match)}`);
 });
 
-controlComposer.command("patch_kind", async (ctx) => {
+controlComposer.command("patch_kind", async ctx => {
     if (ctx.match === "") {
-        throw new ParamNotExistError("kind");
+        ParamNotExistHandle(ctx, "kind");
+        return;
     }
-    const { id: kindId } = sql.SelectKindIdCount(ctx.chat!.id, ctx.match);   // 确认kind存在
+    const { id: kindId } = await sql.SelectKindIdCount(ctx.chat!.id, ctx.match);   // 确认kind存在
     ctx.session.actionKindId = kindId;
     ctx.session.state = ClientStateEnum.patch;
     ctx.replyFmt(
@@ -101,11 +105,12 @@ controlComposer.command("patch_kind", async (ctx) => {
 });
 
 
-controlComposer.command("add_tags", async (ctx) => {
+controlComposer.command("add_tags", async ctx => {
     if (ctx.match === "") {
-        throw new ParamNotExistError("kind");
+        ParamNotExistHandle(ctx, "kind");
+        return;
     }
-    const { id: kindId } = sql.SelectKindIdCount(ctx.chat!.id, ctx.match);   // 确认kind存在
+    const { id: kindId } = await sql.SelectKindIdCount(ctx.chat!.id, ctx.match);   // 确认kind存在
     ctx.session.actionKindId = kindId;
     ctx.session.state = ClientStateEnum.add;
     await ctx.replyFmt(
@@ -113,11 +118,12 @@ controlComposer.command("add_tags", async (ctx) => {
     );
 })
 
-controlComposer.command("rm_tags", async (ctx) => {
+controlComposer.command("rm_tags", async ctx => {
     if (ctx.match === "") {
-        throw new ParamNotExistError("kind");
+        ParamNotExistHandle(ctx, "kind");
+        return;
     }
-    const { id: kindId } = sql.SelectKindIdCount(ctx.chat!.id, ctx.match);   // 确认kind存在
+    const { id: kindId } = await sql.SelectKindIdCount(ctx.chat!.id, ctx.match);   // 确认kind存在
     ctx.session.actionKindId = kindId;
     ctx.session.state = ClientStateEnum.remove;
     ctx.replyFmt(
@@ -142,8 +148,8 @@ controlComposer.on("message:text", async ctx => {
         case ClientStateEnum.add:
             // 添加
             const tagsToAdd = new Set<string>(text.split(" "));
-            const insertCount = sql.InsertTags(kindId, tagsToAdd);
-            await ctx.replyFmt(fmt`add tags, count: ${bold(insertCount)}. }`);
+            const insertCount = await sql.InsertTags(kindId, tagsToAdd);
+            ctx.replyFmt(fmt`add tags, count: ${bold(insertCount)}. }`);
             break;
         case ClientStateEnum.remove:
             // 删除
@@ -151,17 +157,17 @@ controlComposer.on("message:text", async ctx => {
                 sql.DeleteAllKindTags(kindId);
                 ctx.reply("All tags have been remove.");
             } else {
-                 const inputTags = new Set<string>(text.split(" "));
+                const inputTags = new Set<string>(text.split(" "));
                 // 删除
-                const deleteCount = sql.DeleteKindTags(kindId, inputTags);
+                const deleteCount = await sql.DeleteKindTags(kindId, inputTags);
                 ctx.replyFmt(fmt`remove tags, count: ${bold(deleteCount)}}`);
             }
             break;
         case ClientStateEnum.patch:
             // // 覆盖
             const newTags = new Set<string>(text.split(" "));
-            sql.DeleteAllKindTags(kindId);
-            sql.InsertTags(kindId, newTags);
+            await sql.DeleteAllKindTags(kindId);
+            await sql.InsertTags(kindId, newTags);
             ctx.replyFmt(fmt`patch tags, new tags count: ${bold(newTags.size)} `);
             break;
         default:

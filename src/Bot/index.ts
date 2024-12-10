@@ -2,7 +2,7 @@ import { Bot, session } from "grammy";
 import { bold, fmt, hydrateReply } from "@grammyjs/parse-mode";
 import { fileErrorLoger, levelLog, LogLevel } from "../utils/LevelLog.js";
 import mainComposer from "./composers/mainComposer.js";
-import { KindNotExistError, KindAlreadyExistError, EmptyKindError, AllHasNoTagError, ParamNotExistError, TagFetchError } from "../utils/CustomError.js";
+import { KindNotExistError, KindAlreadyExistError, EmptyKindError, AllHasNoTagError, TagFetchError, IdFetchError } from "../utils/CustomError.js";
 import { ClientStateEnum } from "../type/CustomEnum.js";
 import { freeStorage } from "@grammyjs/storage-free";
 
@@ -37,11 +37,11 @@ async function initBot(botToken: string) {
             || error instanceof KindAlreadyExistError
         ) {
             ctx.replyFmt(fmt`${bold("Action fail")}: ${error.message}`);
-        } else if (error instanceof ParamNotExistError) {
-            ctx.replyFmt(fmt`the command need the param:  <${bold(error.message)}>`);
-        }
-        else if (error instanceof TagFetchError) {
-            ctx.replyFmt(fmt`${bold("Action fail")}: ${error.message}`);
+        } 
+        else if (error instanceof TagFetchError
+            || error instanceof IdFetchError
+        ) {
+            ctx.replyFmt(fmt`${bold("Action fail")}, reason: ${error.message}`);
         } else {
             // 未知错误
             levelLog(LogLevel.error, error);

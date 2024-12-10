@@ -11,7 +11,7 @@ import * as readlineSync from "readline-sync";
 import { fileErrorLoger, setLogLevel, levelLog, LogLevel } from "./utils/LevelLog.js";
 import { exit } from "process";
 import SqlApi from "./SqlApi/index.js";
-import { NewSqlApi } from "./SqlApi/index.js";
+import { SqliteError } from "better-sqlite3";
 
 const sql = SqlApi.GetInstance();
 
@@ -42,9 +42,19 @@ async function main() {
 // main();
 
 async function te() {
-  const sql = NewSqlApi.GetInstance();
-  // await sql.InsertKind(111, "sasas");
-  await sql.InsertTags(1, new Set<string>(["aca", "bka"]));
+  try {
+    await sql.InsertKind(111, "sasas");
+    // throw new Error("111");
+  } catch (err) {
+    if (err instanceof SqliteError) {
+      if (err.code == "SQLITE_CONSTRAINT_UNIQUE") {
+        // 处理过程
+        console.log("命中");
+      }
+    }
+    // console.log(typeof(err));
+  }
+  // await sql.InsertTags(1, new Set<string>(["bca", "baa"]));
   console.log("done..");
 }
 

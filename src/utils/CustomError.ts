@@ -27,13 +27,6 @@ export class EmptyKindError extends Error {
     }
 }
 
-export class TagFetchError extends Error {
-    constructor(tag: string) {
-        super(`Tag: ${tag}, fetch error. This tag may be invalid, you can use /rm_tags to remove it.`);
-        this.name = "TagFetchError";
-    }
-}
-
 export class AllHasNoTagError extends Error {
     constructor() {
         super(`There is no kind has tags, please use /add_kind command to add a kind and /add_tags command to add tags`);
@@ -41,10 +34,25 @@ export class AllHasNoTagError extends Error {
     }
 }
 
-export class ParamNotExistError extends Error {
-    constructor(paramName: string) {
-        super(paramName);
-        this.name = "ramNotExistError";
+// danbooru相关
+export class TagFetchError extends Error {
+    constructor(tag: string) {
+        super(`Tag: ${tag}, fetch error. This tag may be invalid, you can use /rm_tags to remove it.`);
+        this.name = "TagFetchError";
+    }
+}
+
+export class IdFetchError extends Error {
+    constructor(id: number) {
+        super(`Image_id: ${id}, fetch fail.`);
+        this.name = "IdFetchError";
+    }
+}
+
+export class AfterUpdateEmptyError extends Error {
+    constructor(tag: string) {
+        super(`tag: ${tag}, update but can't fetch`);
+        this.name = "AfterUpdateEmptyError";
     }
 }
 

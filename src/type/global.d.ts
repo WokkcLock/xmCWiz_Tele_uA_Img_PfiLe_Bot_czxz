@@ -15,11 +15,7 @@ declare global {
         page?: string | number, // id 查询或其他
     }
 
-    type UserCacheItem = {
-        profile: UserProfile,
-        timer: NodeJS.Timeout,
-        isWrited: boolean,
-    }
+
     type Rating = 'general' | 'sensitive' | 'questionable' | 'explicit' | undefined;
 
     interface CusSessionData {

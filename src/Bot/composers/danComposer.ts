@@ -1,6 +1,6 @@
 import { Composer, GrammyError, InputFile } from "grammy";
 import DanbooruApi from "../../DanbooruApi/index.js";
-import { bold, code, fmt, italic, link } from "@grammyjs/parse-mode";
+import { bold, fmt, italic, link } from "@grammyjs/parse-mode";
 import { levelLog, LogLevel } from "../../utils/LevelLog.js";
 import SqlApi from "../../SqlApi/index.js";
 
@@ -48,17 +48,13 @@ danComposer.command("id", async (ctx) => {
         ctx.reply("Your input id invalid, only number");
         return;
     }
-    try {
-        const ret = await dan.GetImageFromId(parseInt(id));
-        await ctx.replyFmtWithPhoto(
-            new InputFile(new Uint8Array(ret.image_data)),
-            {
-                caption: fmt`${link("gallery", ret.dan_url)}`,
-            });
-    } catch (err) {
-        levelLog(LogLevel.error, err);
-        await ctx.replyFmt(fmt`${bold("[id]")} : ${code(id)}, fetch fail`);
-    }
+    const ret = await dan.GetImageFromId(parseInt(id));
+    await ctx.replyFmtWithPhoto(
+        new InputFile(new Uint8Array(ret.image_data)),
+        {
+            caption: fmt`${link("gallery", ret.dan_url)}`,
+        });
+
 });
 
 danComposer.command("tag", async (ctx) => {
@@ -68,18 +64,22 @@ danComposer.command("tag", async (ctx) => {
         ctx.reply("Your input tags invalid, please check danbooru");
         return;
     }
-    await canRetrySendPhotoWithTag(ctx, dan, tag);
+    const ret = await dan.GetImageFromTag(ctx.session.rating, tag);
+    await ctx.replyFmtWithPhoto(new InputFile(new Uint8Array(ret.image_data)), {
+        caption: fmt`\n${bold("tag")}: ${italic(tag)}\n${link("gallery", ret.dan_url)}`
+    });
+    // await canRetrySendPhotoWithTag(ctx, dan, tag);
 });
 
-danComposer.command("random", async (ctx) => {
+danComposer.command("random", async ctx => {
     let kindId: number;
     let tagsCount: number;
     if (ctx.match == "") {
         // 在所有kind中随机
-        ({ id: kindId, count: tagsCount } = sql.SelectNotEmptyKindIdRandomSingle(ctx.chat.id));
+        ({ id: kindId, count: tagsCount } = await sql.SelectNotEmptyKindIdRandomSingle(ctx.chat.id));
     } else {
         // 直接选择输入的kind
-        ({ id: kindId, count: tagsCount } = sql.SelectKindIdCount(ctx.chat.id, ctx.match));
+        ({ id: kindId, count: tagsCount } = await sql.SelectKindIdCount(ctx.chat.id, ctx.match));
         if (tagsCount == 0) {
             await ctx.replyFmt(
                 fmt`there is still no tags in ${bold(ctx.match)}, you can use /add_tags to add tags`,
@@ -87,10 +87,13 @@ danComposer.command("random", async (ctx) => {
             return;
         }
     }
-
     // 一个合法的kindId和tagsCount
-    const randomTag = sql.SelectSingleRandomKindTag(kindId);
-    await canRetrySendPhotoWithTag(ctx, dan, randomTag);
+    const randomTag = await sql.SelectSingleRandomKindTag(kindId);
+    // await canRetrySendPhotoWithTag(ctx, dan, randomTag);
+    const ret = await dan.GetImageFromTag(ctx.session.rating, randomTag);
+    await ctx.replyFmtWithPhoto(new InputFile(new Uint8Array(ret.image_data)), {
+        caption: fmt`\n${bold("tag")}: ${italic(randomTag)}\n${link("gallery", ret.dan_url)}`
+    });
 });
 
 

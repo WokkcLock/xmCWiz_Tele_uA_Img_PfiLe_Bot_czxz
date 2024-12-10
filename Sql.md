@@ -7,8 +7,10 @@ CREATE TABLE IF NOT EXISTS kinds (
 	id INTEGER PRIMARY KEY,
 	kind NVARCHAR(50) NOT NULL,
 	chat_id INTEGER NOT NULL, 
-    count INTEGER NOT NULL DEFAULT 0,
-	INDEX idx_kinds_chat_id (chat_id)
+        count INTEGER NOT NULL DEFAULT 0,
+	INDEX idx_kinds_chat_id (chat_id),
+	INDEX idx_kinds_chat_id_kind (chat_id, kind),
+	UNIQUE(kind, chat_id)
 );
 ```
 

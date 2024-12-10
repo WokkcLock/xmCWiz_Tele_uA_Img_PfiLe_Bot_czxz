@@ -2,7 +2,7 @@ import AbstractFetcher from "./Fetcher/Fetcher.js";
 import CurlFetcher from "./Fetcher/CurlFetcher.js";
 import { LogLevel, levelLog } from "../utils/LevelLog.js";
 import { asyncSleep, getRandomInt } from "../utils/ToolFunc.js";
-import { TagFetchError } from "../utils/CustomError.js";
+import { AfterUpdateEmptyError, IdFetchError, TagFetchError } from "../utils/CustomError.js";
 import { ImageFileExtEnum } from "../type/CustomEnum.js";
 import { assert } from "console";
 import SqlApi from "../SqlApi/index.js";
@@ -75,7 +75,26 @@ class DanbooruApi {
         return `https://cdn.donmai.us/original/${md5[0] + md5[1]}/${md5[2] + md5[3]}/${md5}.${this.getFileExtStr(fileExtEnum)}`;
     }
 
-    async updateTagCache(rating: Rating, tag: string) {
+    private async canRetryFetchImg(url: string, id: number) {
+        let failCount = 0;
+        while (true) {
+            // 最多进行3次尝试
+            try {
+                return await this._fetcher.GetByteFile(url);
+            } catch {
+                failCount++;
+            }
+            if (failCount < 3) {
+                await asyncSleep(200 + getRandomInt(0, 500));
+            } else {
+                break;
+            }
+        }
+        // 请求出错
+        throw new IdFetchError(id);
+    }
+
+    private async updateTagCache(rating: Rating, tag: string) {
         let paramTag = rating == undefined ? tag : `${tag} rating:${rating[0]}`;
         const params: DanbooruParams = {
             tags: `${paramTag} random:${getLimit}`,
@@ -165,29 +184,31 @@ class DanbooruApi {
             limit: 1,
         })) as { [key: string]: any }[];
 
-        try {
-            return {
-                image_data: await this.getImg(res[0].media_asset.variants[3].url),
-                dan_url: `${DanbooruGalleryBaseUrl}/${res[0].id}`,
-            };
-        } catch {
-            throw new Error("Get image from id.");
-        }
+        return {
+            // image_data: await this.getImg(res[0].media_asset.variants[3].url),
+            image_data: await this.canRetryFetchImg(res[0].media_asset.variants[3].url, res[0].id),
+            dan_url: `${DanbooruGalleryBaseUrl}/${res[0].id}`,
+        };
     }
 
     async GetImageFromTag(rating: Rating, tag: string) {
-        let cacheItem = sql.SelectSingleCache(rating, tag);
+        let cacheItem = await sql.SelectSingleCache(rating, tag);
         if (cacheItem == undefined) {
-            // 更新后再次尝试
+            // 缓存为空
             await this.updateTagCache(rating, tag);
-            cacheItem = sql.SelectSingleCache(rating, tag);
+            cacheItem = await sql.SelectSingleCache(rating, tag);
         }
-        assert(cacheItem != undefined);
-        const imageUrl = this.getSampleUrl(cacheItem!.md5, cacheItem!.file_ext);
-        const imgByte = await this.getImg(imageUrl);
+
+        if (cacheItem == undefined) {
+            // 更新缓存后仍然为空
+            throw new AfterUpdateEmptyError(tag);
+        }
+
+        const imageUrl = this.getSampleUrl(cacheItem.md5, cacheItem.file_ext);
+        // const imgByte = await this.getImg(imageUrl);
         return {
             dan_url: `${DanbooruGalleryBaseUrl}/${cacheItem!.image_id}`,
-            image_data: imgByte,
+            image_data: await this.canRetryFetchImg(imageUrl, cacheItem.image_id),
         }
     }
 }

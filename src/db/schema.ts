@@ -2,13 +2,14 @@ import { sql } from "drizzle-orm";
 import { integer, text, sqliteTable, uniqueIndex, check, index } from "drizzle-orm/sqlite-core";
 
 function generateCacheTable(tableName: string) {
-    return sqliteTable(tableName, {
-        id: integer().primaryKey({ autoIncrement: true }),
-        tag: text().notNull(),
-        md5: text().notNull(),
-        file_ext: integer().notNull(),
-        image_id: integer().notNull(),
-    },
+    return sqliteTable(tableName,
+        {
+            id: integer().primaryKey({ autoIncrement: true }),
+            tag: text().notNull(),
+            md5: text().notNull(),
+            file_ext: integer().notNull(),
+            image_id: integer().notNull(),
+        },
         table => {
             return {
                 md5LenCheck: check(`${tableName}_md5_len_check`, sql`length(${table.md5}) = 32`),
@@ -18,25 +19,27 @@ function generateCacheTable(tableName: string) {
     )
 }
 
-export const kindTable = sqliteTable("kinds", {
-    id: integer().primaryKey({ autoIncrement: true }),
-    kind: text().notNull(),
-    chat_id: integer().notNull(),
-    count: integer().notNull().default(0),
-},
+export const kindTable = sqliteTable("kinds",
+    {
+        id: integer().primaryKey({ autoIncrement: true }),
+        kind: text().notNull(),
+        chat_id: integer().notNull(),
+        count: integer().notNull().default(0),
+    },
     table => {
         return {
             chatIdIndex: index("idx_kinds_on_chatid").on(table.chat_id),
-            chatIdKindIndex: index("index_kinds_on_chatid_kind").on(table.chat_id, table.kind)
+            chatIdKindUniqueIndex: uniqueIndex("unique_index_kinds_on_chatid_kind").on(table.chat_id, table.kind),
         }
     }
 );
 
-export const tagTabel = sqliteTable("tags", {
-    id: integer().primaryKey({ autoIncrement: true }),
-    kind_id: integer().references(() => kindTable.id, { onDelete: "cascade" }),
-    tag: text().notNull(),
-},
+export const tagTabel = sqliteTable("tags",
+    {
+        id: integer().primaryKey({ autoIncrement: true }),
+        kind_id: integer().references(() => kindTable.id, { onDelete: "cascade" }),
+        tag: text().notNull(),
+    },
     table => {
         return {
             kindIdTagUniqueIndex: uniqueIndex("unique_idx_tags_on_kindid_tag").on(table.kind_id, table.tag),
