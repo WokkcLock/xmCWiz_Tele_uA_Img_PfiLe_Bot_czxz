@@ -15,3 +15,11 @@ export enum ClientStateEnum {
     patch,
     add,
 }
+
+export enum RatingEnum {
+    disable,
+    general,
+    sensitive,
+    questionable,
+    explicit,
+}

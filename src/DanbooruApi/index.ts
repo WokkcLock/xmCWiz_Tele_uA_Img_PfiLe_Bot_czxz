@@ -12,7 +12,7 @@ const sql = SqlApi.GetInstance();
 
 const DanbooruBaseApiUrl = "https://danbooru.donmai.us/posts.json";
 const DanbooruGalleryBaseUrl = "https://danbooru.donmai.us/posts";
-const getLimit = 7; // 每次请求限制
+const getLimit = 30; // 每次请求限制
 
 class DanbooruApi {
     private static _instance: DanbooruApi | undefined = undefined;
