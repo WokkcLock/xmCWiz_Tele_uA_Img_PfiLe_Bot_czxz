@@ -4,12 +4,19 @@ import Database from "better-sqlite3";
 import fs from "fs";
 import { generateSingleLevelLog, LogLevel } from "../utils/LevelLog";
 
-if (!fs.existsSync("private")) {
-    fs.mkdirSync("private");
+let sqlUrl: string;
+if (process.env.DB_URL == undefined) {
+    if (!fs.existsSync("private")) {
+        fs.mkdirSync("private");
+    }
+    sqlUrl = "private/sql.db";
+} else {
+    sqlUrl = process.env.DB_URL;
 }
 
+
 const db = drizzle({
-    client: new Database("private/sql.db", { verbose: generateSingleLevelLog(LogLevel.sql) }),
+    client: new Database(sqlUrl , { verbose: generateSingleLevelLog(LogLevel.sql) }),
 });
 
 db.$client.pragma("synchronous=OFF");    // 关闭写同步, 提升性能

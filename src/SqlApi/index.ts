@@ -1,12 +1,14 @@
-import { AllHasNoTagError, KindAlreadyExistError, KindNameTooLongError, KindNotExistError } from "../utils/CustomError.js";
-import { ImageFileExtEnum } from "../type/CustomEnum.js";
+import { EmptyKindError, KindAlreadyExistError, KindNameTooLongError, KindNotExistError, TagLenTooLongError } from "../utils/CustomError.js";
+import { ClientStateEnum, ImageFileExtEnum, RatingEnum } from "../type/CustomEnum.js";
 import db from "../db/index.js";
-import { dCacheTable, eCacheTable, gCacheTable, kindTable, qCacheTable, sCacheTable, tagTabel } from "../db/schema.js";
-import { and, eq, sql } from "drizzle-orm";
+import { kindTable, cacheTable, tagTabel, cacheControlTable, userTable } from "../db/schema.js";
+import { and, eq, lte, gte } from "drizzle-orm";
 import { SqliteError } from "better-sqlite3";
+import { levelLog, LogLevel } from "../utils/LevelLog.js";
 
 const kindStrLenLimit = 50;
 const tagstrLenLimit = 50;
+const cacheTimePatience = 1;  // 缓存存在30分钟
 
 class SqlApi {
     private static _instance: SqlApi | undefined
@@ -49,84 +51,103 @@ class SqlApi {
             kind_id: number,
             tag: string
         }[];
-        for (const item of inputTagSet) {
+        for (const tagItem of inputTagSet) {
+            if (tagItem.length > tagstrLenLimit) {
+                throw new TagLenTooLongError(tagItem);
+            }
             inputList.push({
                 kind_id: kindId,
-                tag: item,
+                tag: tagItem,
             })
         }
-        const addCount = (await db.insert(tagTabel).values(inputList).returning().onConflictDoNothing()).length;
-        if (addCount != 0) {
-            const { count: oldCount } = (await db
-                .select({
-                    count: kindTable.count
-                })
-                .from(kindTable)
-                .where(eq(kindTable.id, kindId)))[0];
-            await db
-                .update(kindTable)
-                .set({ count: oldCount + addCount })
-                .where(eq(kindTable.id, kindId));
-        }
-        return addCount;
-    }
 
-    async InsertCache(rating: Rating, tag: string, cacheList: { md5: string, file_ext: ImageFileExtEnum, image_id: number }[]) {
-        const newAry = cacheList.map(item => ({ ...item, tag }));
-        db.transaction(async (tx) => {
-            switch (rating) {
-                case "general":
-                    await db.insert(gCacheTable).values(newAry);
-                    break;
-                case "sensitive":
-                    await db.insert(sCacheTable).values(newAry);
-                    break;
-                case "questionable":
-                    await db.insert(qCacheTable).values(newAry);
-                    break;
-                case "explicit":
-                    await db.insert(eCacheTable).values(newAry);
-                    break;
-                default:
-                    await db.insert(dCacheTable).values(newAry);
+
+        return await db.transaction(async tx => {
+            const addCount = (await tx.insert(tagTabel).values(inputList).returning().onConflictDoNothing()).length;
+            if (addCount != 0) {
+                const { count: oldCount } = (await tx
+                    .select({
+                        count: kindTable.count
+                    })
+                    .from(kindTable)
+                    .where(eq(kindTable.id, kindId)))[0];
+                await tx
+                    .update(kindTable)
+                    .set({ count: oldCount + addCount })
+                    .where(eq(kindTable.id, kindId));
             }
+            return addCount;
         })
     }
 
-    async SelectKindIdCount(chatId: number, kind: string) {
+    async InsertCaches(rating: RatingEnum, tag: string, cacheList: { md5: string, file_ext: ImageFileExtEnum, image_id: number }[]) {
+        await db.transaction(async (tx) => {
+            const idList = (await tx.insert(cacheTable).values(cacheList).returning({ id: cacheTable.id })).map(item => item.id);
+            await tx.insert(cacheControlTable)
+                .values({
+                    tag,
+                    rating,
+                    start_index: idList[0],
+                    end_index: idList[idList.length - 1],
+                    update_time: Date.now(),
+                })
+                .onConflictDoUpdate(
+                    {
+                        target: [cacheControlTable.rating, cacheControlTable.tag],
+                        set: {
+                            start_index: idList[0],
+                            end_index: idList[idList.length - 1],
+                            update_time: Date.now(),
+                        }
+                    }
+                );
+        });
+    }
+
+    async SelectUser(chatId: number) {
         const ret = await db
             .select({
-                id: kindTable.id,
-                count: kindTable.count
+                rating: userTable.rating,
+                actionKindId: userTable.action_kind_id,
+                state: userTable.state,
+            })
+            .from(userTable)
+            .where(eq(userTable.chat_id, chatId));
+        if (ret.length > 0) {
+            return ret[0];
+        }
+
+        // 不存在则插入
+        await db.insert(userTable).values({
+            chat_id: chatId,
+            rating: RatingEnum.disable,
+            state: ClientStateEnum.default,
+            action_kind_id: -1,
+        });
+        return {
+            rating: RatingEnum.disable,
+            state: ClientStateEnum.default,
+            actionKindId: -1,
+        };
+
+    }
+
+    async SelectKindId(chatId: number, kind: string) {
+        const ret = await db
+            .select({
+                id: kindTable.id
             })
             .from(kindTable)
-            .where(
-                and(
-                    eq(kindTable.chat_id, chatId),
-                    eq(kindTable.kind, kind)
-                )
-            );
+            .where(and(
+                eq(kindTable.chat_id, chatId),
+                eq(kindTable.kind, kind)
+            ));
         if (ret.length == 0) {
             throw new KindNotExistError(kind);
         }
-        return ret[0];
+        return ret[0].id;
     }
 
-    async SelectNotEmptyKindIdRandomSingle(chatId: number) {
-        const ret = await db
-            .select({
-                id: kindTable.id,
-                count: kindTable.count,
-            })
-            .from(kindTable)
-            .where(eq(kindTable.chat_id, chatId))
-            .orderBy(sql`RANDOM()`)
-            .limit(1);
-        if (ret.length == 0) {
-            throw new AllHasNoTagError();
-        }
-        return ret[0];
-    }
 
     async SelectAllKinds(chatId: number) {
         return (await db
@@ -138,17 +159,20 @@ class SqlApi {
             .map(item => item.kind);
     }
 
-    async SelectKindTagsWithKindId(kindId: number) {
-        return (await db
-            .select({
-                tag: tagTabel.tag,
-            })
-            .from(tagTabel)
-            .where(eq(tagTabel.kind_id, kindId))).map(item => item.tag);
-    }
 
-    async SelectKindTags(chatId: number, kind: string) {
-        const { id: kindId, count } = await this.SelectKindIdCount(chatId, kind);
+    async SelectKindAllTags(chatId: number, kind: string) {
+        const ret = await db.select({
+            id: kindTable.id,
+            count: kindTable.count
+        }).from(kindTable).where(and(
+            eq(kindTable.chat_id, chatId),
+            eq(kindTable.kind, kind)
+        ));
+        if (ret.length == 0) {
+            throw new KindNotExistError(kind);
+        }
+        const kindId = ret[0].id;
+        const count = ret[0].count;
         if (count == 0) {
             return [] as string[];
         }
@@ -156,52 +180,128 @@ class SqlApi {
             .select({ tag: tagTabel.tag })
             .from(tagTabel)
             .where(eq(tagTabel.kind_id, kindId))).map(item => item.tag);
-
     }
 
-    async SelectSingleRandomKindTag(notEmptyKindId: number) {
-        const ret = await db
-            .select({ tag: tagTabel.tag })
-            .from(tagTabel)
-            .where(eq(tagTabel.kind_id, notEmptyKindId))
-            .orderBy(sql`RANDOM()`)
-            .limit(1);
-        return ret[0].tag;
-    }
-
-    async SelectSingleCache(rating: Rating, tag: string) {
-        let cacheTable;
-        switch (rating) {
-            case "general":
-                cacheTable = gCacheTable;
-                break;
-            case "sensitive":
-                cacheTable = sCacheTable;
-                break;
-            case "questionable":
-                cacheTable = qCacheTable;
-                break;
-            case "explicit":
-                cacheTable = eCacheTable;
-                break;
-            default:
-                cacheTable = dCacheTable;
+    async SelectRandomKindTag(chatId: number, kind: string) {
+        let ret1 = await db.select({
+            id: kindTable.id,
+            count: kindTable.count,
+        })
+            .from(kindTable)
+            .where(
+                and(
+                    eq(kindTable.chat_id, chatId),
+                    eq(kindTable.kind, kind),
+                )
+            );
+        if (ret1.length == 0) {
+            throw new KindNotExistError(kind);
         }
-        // 选择
-        const ret = await db.select().from(cacheTable).where(eq(cacheTable.tag, tag))
-            .orderBy(sql`RANDOM()`).limit(1);
-        if (ret.length == 0) {
-            // cache不足
+        const kindId = ret1[0].id;
+        const tagCount = ret1[0].count;
+        if (tagCount == 0) {
+            throw new EmptyKindError(kind);
+        }
+
+        const ret2 = await db.select({
+            id: tagTabel.id
+        })
+            .from(tagTabel)
+            .where(
+                eq(tagTabel.kind_id, kindId)
+            );
+        const randomId = ret2[Math.floor(Math.random() * ret2.length)].id;
+
+        return (await db.select({
+            tag: tagTabel.tag
+        })
+            .from(tagTabel)
+            .where(
+                eq(tagTabel.id, randomId)
+            )
+        )[0].tag;
+    }
+
+
+    async SelectCache(rating: RatingEnum, tag: string) {
+        const ret1 = await db.select({
+            startIndex: cacheControlTable.start_index,
+            endIndex: cacheControlTable.end_index,
+            updateTime: cacheControlTable.update_time,
+        })
+            .from(cacheControlTable)
+            .where(and(
+                eq(cacheControlTable.rating, rating),
+                eq(cacheControlTable.tag, tag),
+            ));
+        if (ret1.length == 0) {
             return undefined;
         }
-        const cacheItem = ret[0];
-        // 删除
-        await db.delete(cacheTable).where(eq(cacheTable.id, cacheItem.id));
-        return {
-            md5: cacheItem.md5,
-            file_ext: cacheItem.file_ext,
-            image_id: cacheItem.image_id,
-        };
+        const startIndex = ret1[0].startIndex;
+        const endIndex = ret1[0].endIndex;
+        const updateTime = ret1[0].updateTime;
+        // 这里的整数代表的是毫秒
+
+        if (Date.now() - updateTime > cacheTimePatience * 1000 * 60) {
+            // 删除旧缓存, 返回undefined让上级函数更新缓存
+            await db
+                .delete(cacheTable)
+                .where(
+                    and(
+                        lte(cacheTable.id, endIndex),
+                        gte(cacheTable.id, startIndex),
+                    )
+                );
+            return undefined;
+        }
+
+        const randomCacheId = Math.floor(Math.random() * (endIndex - startIndex + 1) + startIndex);
+
+        return (await db.select({
+            md5: cacheTable.md5,
+            image_id: cacheTable.image_id,
+            file_ext: cacheTable.file_ext
+        })
+            .from(cacheTable)
+            .where(eq(
+                cacheTable.id, randomCacheId
+            )))[0];
+    }
+
+    async UpdateUserRating(chatId: number, newRating: RatingEnum) {
+        await db
+            .update(userTable)
+            .set({
+                rating: newRating
+            })
+            .where(eq(userTable.chat_id, chatId));
+    }
+
+    // AKId: action_kind_id
+    async UpdateUserStateAKId(chatId: number, newState: ClientStateEnum, newActionKindId: number) {
+        await db
+            .update(userTable)
+            .set({
+                state: newState,
+                action_kind_id: newActionKindId,
+            })
+            .where(eq(userTable.chat_id, chatId));
+    }
+
+    async UpdateKindName(kindId: number, newKindName: string) {
+        await db
+            .update(kindTable)
+            .set({
+                kind: newKindName,
+            })
+            .where(and(
+                eq(kindTable.id, kindId),
+            ))
+            .returning({ id: kindTable.id })
+            .catch(_ => {
+                // 新的kind name 已经存在
+                throw new KindAlreadyExistError(newKindName);
+            });
     }
 
     async DeleteKind(chatId: number, kind: string) {
@@ -211,27 +311,29 @@ class SqlApi {
         ));
     }
 
-    async DeleteAllKindTags(kindId: number) {
-        await db.delete(tagTabel).where(eq(tagTabel.kind_id, kindId));
+    async DeleteAllKindTag(kindId: number) {
+        await db.transaction(async tx => {
+            await tx.delete(tagTabel).where(eq(tagTabel.kind_id, kindId));
+        })
     }
 
-    async DeleteKindTags(kindId: number, inputTagSet: Set<string>) {
+    async DeleteKindTag(kindId: number, inputTagSet: Set<string>) {
         if (inputTagSet.size == 0) {
             return 0;
         }
         let deleteCount = 0;
         await db.transaction(async (tx) => {
             for (const tag of inputTagSet) {
-                deleteCount += (await tx.delete(tagTabel).where(eq(tagTabel.tag, tag)).returning()).length;
+                deleteCount += (await tx.delete(tagTabel).where(eq(tagTabel.tag, tag)).returning({ id: tagTabel.id })).length;
             }
             if (deleteCount != 0) {
-                const { count: oldKindCount } = (await db.select({ count: kindTable.count })
+                const { count: oldKindCount } = (await tx.select({ count: kindTable.count })
                     .from(kindTable)
                     .where(eq(kindTable.id, kindId)))[0];
 
-                await db.update(kindTable)
+                await tx.update(kindTable)
                     .set(
-                        { count: oldKindCount + deleteCount }
+                        { count: oldKindCount - deleteCount }
                     )
                     .where(eq(kindTable.id, kindId));
             }

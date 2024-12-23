@@ -7,23 +7,24 @@
  * @Description: 
  */
 import { initBot } from "./Bot/index.js";
-import * as readlineSync from "readline-sync";
 import { fileErrorLoger, setLogLevel, levelLog, LogLevel } from "./utils/LevelLog.js";
 import { exit } from "process";
 import SqlApi from "./SqlApi/index.js";
 import { SqliteError } from "better-sqlite3";
+import "dotenv/config"
 
 const sql = SqlApi.GetInstance();
 
 async function main() {
-  const args = process.argv.slice(2);
   let botToken: string;
   setLogLevel(LogLevel.debug);
-  if (args.length == 0) {
-    botToken = readlineSync.question("Please input your bot token: ");
-  } else {
-    botToken = args[0];
+
+
+  if (process.env.BOT_TOKEN == undefined) {
+    levelLog(LogLevel.error, "need to create '.env' file, and set 'BOT_TOKEN' property");
+    return;
   }
+  botToken = process.env.BOT_TOKEN; 
 
   process.on("SIGINT", () => {
     console.log("");  // 换行
@@ -38,7 +39,7 @@ async function main() {
   return;
 }
 
-// main();
+main();
 
 async function te() {
   try {
@@ -57,4 +58,4 @@ async function te() {
   console.log("done..");
 }
 
-te();
+// te();

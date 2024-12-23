@@ -1,9 +1,9 @@
-import { Context, SessionFlavor } from "grammy";
+import { Context, LazySessionFlavor } from "grammy";
 import UserProfile from "../utils/User/UserProfile.js";
 import type { ParseModeFlavor } from "@grammyjs/parse-mode";
 import SqlApi from "../SqlApi/index.js";
 import { LogLevel } from "../utils/LevelLog.js";
-import { ClientStateEnum } from "./CustomEnum.js";
+import { ClientStateEnum, RatingEnum } from "./CustomEnum.js";
 
 declare global {
     type DanbooruParams = {
@@ -16,16 +16,8 @@ declare global {
     }
 
 
-    type Rating = 'general' | 'sensitive' | 'questionable' | 'explicit' | undefined;
-
-    interface CusSessionData {
-        rating: Rating,
-        state: ClientStateEnum,
-        // 在仿对话过程中使用的数据
-        actionKindId: number,
-    }
      
-    type CusContext = ParseModeFlavor<Context> & SessionFlavor<CusSessionData>;
+    type CusContext = ParseModeFlavor<Context>;
 
     // SQl相关
     type SqlCountRet = { "COUNT(*)": number };

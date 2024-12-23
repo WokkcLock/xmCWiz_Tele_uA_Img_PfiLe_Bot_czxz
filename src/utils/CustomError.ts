@@ -1,7 +1,7 @@
 
 export class KindNotExistError extends Error {
     constructor(kind: string) {
-        super(`Kind: ${kind}, does not exist`);
+        super(`[Kind] ${kind}, does not exist`);
         this.name = "KindNotExistError";
     }
 }
@@ -22,17 +22,17 @@ export class KindNameTooLongError extends Error {
 
 export class EmptyKindError extends Error {
     constructor(kind: string) {
-        super(`Kind: ${kind}, has no tags`);
+        super(`[Kind]: ${kind}, has no tags`);
         this.name = "EmptyKindError";
     }
 }
 
-export class AllHasNoTagError extends Error {
-    constructor() {
-        super(`There is no kind has tags, please use /add_kind command to add a kind and /add_tags command to add tags`);
-        this.name = "AllHasNoTagError";
+export class TagLenTooLongError extends Error {
+    constructor(tag: string) {
+        super(`[tag]: ${tag}, len too long (len <= 50)`);
     }
 }
+
 
 // danbooru相关
 export class TagFetchError extends Error {

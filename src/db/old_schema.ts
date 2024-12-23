@@ -5,6 +5,7 @@ function generateCacheTable(tableName: string) {
     return sqliteTable(tableName,
         {
             id: integer().primaryKey({ autoIncrement: true }),
+            tag: text().notNull(),
             md5: text().notNull(),
             file_ext: integer().notNull(),
             image_id: integer().notNull(),
@@ -12,6 +13,7 @@ function generateCacheTable(tableName: string) {
         table => {
             return {
                 md5LenCheck: check(`${tableName}_md5_len_check`, sql`length(${table.md5}) = 32`),
+                tagIndex: index(`idx_${tableName}_on_tag`).on(table.tag),
             }
         }
     )
@@ -42,21 +44,6 @@ export const tagTabel = sqliteTable("tags",
         return {
             kindIdTagUniqueIndex: uniqueIndex("unique_idx_tags_on_kindid_tag").on(table.kind_id, table.tag),
         }
-    }
-);
-
-export const cacheControlTable = sqliteTable("cache_control",
-    {
-        id: integer().primaryKey({ autoIncrement: true }),
-        tag: text().notNull(),
-        update_time: integer("timestamp", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-        start_index: integer().notNull(),
-        end_index: integer().notNull(),
-    },
-    table => {
-        return {
-            tagUniqueIndex: uniqueIndex("unique_idx_cache_control_on_tag").on(table.tag)
-        };
     }
 );
 

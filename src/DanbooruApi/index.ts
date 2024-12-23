@@ -1,10 +1,9 @@
 import AbstractFetcher from "./Fetcher/Fetcher.js";
 import CurlFetcher from "./Fetcher/CurlFetcher.js";
 import { LogLevel, levelLog } from "../utils/LevelLog.js";
-import { asyncSleep, getRandomInt } from "../utils/ToolFunc.js";
+import { asyncSleep, getRandomInt, getRatingText } from "../utils/Helper/ToolFunc.js";
 import { AfterUpdateEmptyError, IdFetchError, TagFetchError } from "../utils/CustomError.js";
-import { ImageFileExtEnum } from "../type/CustomEnum.js";
-import { assert } from "console";
+import { ImageFileExtEnum, RatingEnum } from "../type/CustomEnum.js";
 import SqlApi from "../SqlApi/index.js";
 
 const sql = SqlApi.GetInstance();
@@ -94,8 +93,14 @@ class DanbooruApi {
         throw new IdFetchError(id);
     }
 
-    private async updateTagCache(rating: Rating, tag: string) {
-        let paramTag = rating == undefined ? tag : `${tag} rating:${rating[0]}`;
+    private async updateTagCache(rating: RatingEnum, tag: string) {
+
+        let paramTag: string; 
+        if (rating != RatingEnum.disable) {
+            paramTag = `${tag} rating:${getRatingText(rating)![0]}`;
+        } else {
+            paramTag = tag;
+        }
         const params: DanbooruParams = {
             tags: `${paramTag} random:${getLimit}`,
         };
@@ -175,7 +180,7 @@ class DanbooruApi {
             }
         }
         // 插入数据库
-        sql.InsertCache(rating, tag, dataList);
+        await sql.InsertCaches(rating, tag, dataList);
     }
 
     async GetImageFromId(id: number) {
@@ -191,12 +196,12 @@ class DanbooruApi {
         };
     }
 
-    async GetImageFromTag(rating: Rating, tag: string) {
-        let cacheItem = await sql.SelectSingleCache(rating, tag);
+    async GetImageFromTag(rating: RatingEnum, tag: string) {
+        let cacheItem = await sql.SelectCache(rating, tag);
         if (cacheItem == undefined) {
             // 缓存为空
             await this.updateTagCache(rating, tag);
-            cacheItem = await sql.SelectSingleCache(rating, tag);
+            cacheItem = await sql.SelectCache(rating, tag);
         }
 
         if (cacheItem == undefined) {

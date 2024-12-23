@@ -11,9 +11,10 @@ export enum ImageFileExtEnum {
 
 export enum ClientStateEnum {
     default, 
-    remove,
-    patch,
-    add,
+    remove_tags,
+    patch_tags,
+    add_tags,
+    rename_kind,
 }
 
 export enum RatingEnum {
