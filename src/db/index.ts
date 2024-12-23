@@ -2,7 +2,7 @@ import "dotenv/config";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import fs from "fs";
-import { generateSingleLevelLog, LogLevel } from "../utils/LevelLog";
+import { generateSingleLevelLog, LogLevel } from "../utils/LevelLog.js";
 
 let sqlUrl: string;
 if (process.env.DB_URL == undefined) {
