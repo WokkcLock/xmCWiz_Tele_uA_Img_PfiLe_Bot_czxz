@@ -35,10 +35,6 @@ class DanbooruApi {
         return new DanbooruApi(fetcher);
     }
 
-    private getImg(url: string) {
-        return this._fetcher.GetByteFile(url);
-    }
-
     private async fetchDanbooruApi(params: DanbooruParams) {
         return await this._fetcher.GetJson(DanbooruBaseApiUrl, params);
     }

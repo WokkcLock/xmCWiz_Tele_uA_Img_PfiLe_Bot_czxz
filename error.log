@@ -1,0 +1,24 @@
+GrammyError: Call to 'sendPhoto' failed! (400: Bad Request: IMAGE_PROCESS_FAILED)
+    at toGrammyError (/home/comiko/CtData/ts/Pro/Bot/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/.pnpm/grammy@1.33.0/node_modules/grammy/out/core/error.js:47:12)
+    at ApiClient.callApi (/home/comiko/CtData/ts/Pro/Bot/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/.pnpm/grammy@1.33.0/node_modules/grammy/out/core/client.js:97:48)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async file:///home/comiko/CtData/ts/Pro/Bot/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/dist/src/Bot/composers/danComposer.js:30:5
+    at async /home/comiko/CtData/ts/Pro/Bot/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/.pnpm/grammy@1.33.0/node_modules/grammy/out/composer.js:578:13
+    at async /home/comiko/CtData/ts/Pro/Bot/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/.pnpm/grammy@1.33.0/node_modules/grammy/out/composer.js:62:13
+    at async /home/comiko/CtData/ts/Pro/Bot/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/.pnpm/grammy@1.33.0/node_modules/grammy/out/composer.js:578:13
+    at async /home/comiko/CtData/ts/Pro/Bot/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/.pnpm/grammy@1.33.0/node_modules/grammy/out/composer.js:62:13
+    at async /home/comiko/CtData/ts/Pro/Bot/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/.pnpm/grammy@1.33.0/node_modules/grammy/out/composer.js:57:9
+    at async /home/comiko/CtData/ts/Pro/Bot/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/.pnpm/grammy@1.33.0/node_modules/grammy/out/composer.js:57:9 {
+  method: 'sendPhoto',
+  payload: {
+    chat_id: 5774625122,
+    photo: 'attach://if5qbnojwm16fldr',
+    business_connection_id: undefined,
+    caption: '\ntag: w_(arknights)\ngallery',
+    caption_entities: [ [Object], [Object], [Object] ]
+  },
+  ok: false,
+  error_code: 400,
+  description: 'Bad Request: IMAGE_PROCESS_FAILED',
+  parameters: {}
+}

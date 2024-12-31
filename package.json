@@ -23,6 +23,7 @@
     "chalk": "^5.4.0",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.38.2",
-    "grammy": "^1.33.0"
+    "grammy": "^1.33.0",
+    "socks-proxy-agent": "^8.0.5"
   }
 }

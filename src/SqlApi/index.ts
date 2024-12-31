@@ -4,11 +4,10 @@ import db from "../db/index.js";
 import { kindTable, cacheTable, tagTabel, cacheControlTable, userTable } from "../db/schema.js";
 import { and, eq, lte, gte } from "drizzle-orm";
 import { SqliteError } from "better-sqlite3";
-import { levelLog, LogLevel } from "../utils/LevelLog.js";
 
 const kindStrLenLimit = 50;
 const tagstrLenLimit = 50;
-const cacheTimePatience = 1;  // 缓存存在30分钟
+const cacheTimePatience = 30;  // 缓存存在30分钟
 
 class SqlApi {
     private static _instance: SqlApi | undefined

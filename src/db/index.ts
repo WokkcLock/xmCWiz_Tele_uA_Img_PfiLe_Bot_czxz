@@ -3,20 +3,17 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import fs from "fs";
 import { generateSingleLevelLog, LogLevel } from "../utils/LevelLog.js";
-
-let sqlUrl: string;
-if (process.env.DB_URL == undefined) {
-    if (!fs.existsSync("private")) {
-        fs.mkdirSync("private");
-    }
-    sqlUrl = "private/sql.db";
-} else {
-    sqlUrl = process.env.DB_URL;
+if (!fs.existsSync("private")) {
+    fs.mkdirSync("private");
 }
 
 
 const db = drizzle({
-    client: new Database(sqlUrl , { verbose: generateSingleLevelLog(LogLevel.sql) }),
+    client: new Database(process.env.DB_URL == undefined ?  "private/sql.db" : process.env.DB_URL, 
+        { 
+            verbose: generateSingleLevelLog(LogLevel.sql) 
+        }
+    ),
 });
 
 db.$client.pragma("synchronous=OFF");    // 关闭写同步, 提升性能

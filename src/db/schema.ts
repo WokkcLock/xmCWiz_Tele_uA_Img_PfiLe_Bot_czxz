@@ -43,6 +43,7 @@ export const cacheControlTable = sqliteTable("cache_control",
         update_time: integer().notNull(),
         start_index: integer().notNull(),
         end_index: integer().notNull(),
+        // invalid_cache_list: text({ mode: "json" }).notNull().$type<number[]>().default(sql`[]`),
     },
     table => [
         uniqueIndex("unique_idx_cache_control_on_tag_rating").on(table.tag, table.rating),
@@ -56,7 +57,5 @@ export const cacheTable = sqliteTable("cache",
         file_ext: integer().notNull(),
         image_id: integer().notNull(),
     },
-    table => [
-        check(`cache_md5_len_check`, sql`length(${table.md5}) = 32`),
-    ]
+    _ => []
 );

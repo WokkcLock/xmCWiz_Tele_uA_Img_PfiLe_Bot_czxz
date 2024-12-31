@@ -3,9 +3,22 @@ import { bold, fmt, hydrateReply } from "@grammyjs/parse-mode";
 import { fileErrorLoger, levelLog, LogLevel } from "../utils/LevelLog.js";
 import mainComposer from "./composers/mainComposer.js";
 import { KindNotExistError, KindAlreadyExistError, EmptyKindError, TagFetchError, IdFetchError, TagLenTooLongError, KindNameTooLongError } from "../utils/CustomError.js";
+import { SocksProxyAgent } from "socks-proxy-agent";
 
-async function initBot(botToken: string) {
-    const bot = new Bot<CusContext>(botToken);
+async function initBot(botToken: string, socksAgentUrl: string | undefined) {
+    let bot;
+    if (socksAgentUrl == undefined) {
+        bot = new Bot<CusContext>(botToken);
+    } else {
+        bot = new Bot<CusContext>(botToken, {
+            client: {
+                baseFetchConfig: {
+                    agent: new SocksProxyAgent(socksAgentUrl),
+                    compress: true,
+                }
+            }
+        })
+    }
 
     // 安装格式化插件
     bot.use(hydrateReply);

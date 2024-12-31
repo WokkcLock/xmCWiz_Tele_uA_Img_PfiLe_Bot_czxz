@@ -24,8 +24,8 @@ async function main() {
     levelLog(LogLevel.error, "need to create '.env' file, and set 'BOT_TOKEN' property");
     return;
   }
-  botToken = process.env.BOT_TOKEN; 
 
+  botToken = process.env.BOT_TOKEN; 
   process.on("SIGINT", () => {
     console.log("");  // 换行
     sql.CloseDb();
@@ -33,7 +33,7 @@ async function main() {
     levelLog(LogLevel.deploy, "server done.");
     exit(0);
   });
-  const bot = await initBot(botToken);
+  const bot = await initBot(botToken, process.env.SOCKS_PROXY);
   bot.start();
   levelLog(LogLevel.deploy, "Bot start.");
   return;
