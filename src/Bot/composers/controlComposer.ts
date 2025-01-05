@@ -1,15 +1,17 @@
 import { Composer, InlineKeyboard } from "grammy";
 import { fmt, bold, italic, code } from "@grammyjs/parse-mode";
-import { ReservedApi } from "../../utils/Helper/ReservedWord.js";
-import SqlApi from "../../SqlApi/index.js";
+import { ReservedApi } from "../../ReservedWord.js";
 import { ClientStateEnum } from "../../type/CustomEnum.js";
-import { ReserveWord } from "../../utils/Helper/ReservedWord.js";
+import { ReserveWord } from "../../ReservedWord.js";
 import { ParamNotExistHandle } from "../Helper/ToolFunc.js";
 import { RatingEnum } from "../../type/CustomEnum.js";
-import { getRatingText } from "../../utils/Helper/ToolFunc.js";
+import { getRatingText } from "../../ToolFunc.js";
 import { levelLog, LogLevel } from "../../utils/LevelLog.js";
+import SqlSelectApi from "../../SqlApi/SelectApi.js";
+import SqlInertApi from "../../SqlApi/InsertApi.js";
+import SqlUpdateApi from "../../SqlApi/UpdateApi.js";
+import SqlDeleteApi from "../../SqlApi/DeleteApi.js";
 
-const sql = SqlApi.GetInstance();
 const controlComposer = new Composer<CusContext>();
 
 controlComposer.command("set_rating", async ctx => {
@@ -20,7 +22,7 @@ controlComposer.command("set_rating", async ctx => {
         .row()
         .text("explicit")
         .text("disable");
-    let ratingText = getRatingText((await sql.SelectUser(ctx.chatId)).rating);
+    let ratingText = getRatingText((await SqlSelectApi.SelectUser(ctx.chatId)).rating);
     if (ratingText == undefined) {
         await ctx.replyFmt(
             fmt`you haven't set rating, you can set it by click the button below.`,
@@ -30,7 +32,7 @@ controlComposer.command("set_rating", async ctx => {
         );
         return;
     }
-    
+
     await ctx.replyFmt(
         fmt`${bold("Now rating")}: ${italic(ratingText)}\nyou can change rating by click the button below.`,
         {
@@ -40,7 +42,7 @@ controlComposer.command("set_rating", async ctx => {
 });
 
 controlComposer.command("list_kinds", async ctx => {
-    const allKinds = await sql.SelectAllKinds(ctx.chat.id);
+    const allKinds = await SqlSelectApi.SelectAllKinds(ctx.chat.id);
     if (allKinds.length == 0) {
         ctx.reply(
             "there is still no kind, you can use /add_kind to add a kind",
@@ -56,7 +58,7 @@ controlComposer.command("list_tags", async ctx => {
         await ParamNotExistHandle(ctx, "kind");
         return;
     }
-    const tags = await sql.SelectKindAllTags(ctx.chat.id, kind);
+    const tags = await SqlSelectApi.SelectKindAllTags(ctx.chat.id, kind);
     if (tags.length == 0) {
         await ctx.replyFmt(
             fmt`there is still no tags in ${bold(kind)}, you can use /add_tags to add tags`,
@@ -80,7 +82,7 @@ controlComposer.command("add_kind", async ctx => {
         );
         return;
     }
-    await sql.InsertKind(ctx.chat.id, kind);
+    await SqlInertApi.InsertKind(ctx.chat.id, kind);
     await ctx.replyFmt(`Add kind: ${code(kind)}`);
 });
 
@@ -89,17 +91,19 @@ controlComposer.command("rename_kind", async ctx => {
         await ParamNotExistHandle(ctx, "kind");
         return;
     }
-    const kindId = await sql.SelectKindId(ctx.chat!.id, ctx.match);
-    await sql.UpdateUserStateAKId(ctx.chatId, ClientStateEnum.rename_kind, kindId);
-    await ctx.reply("input a new kind name, it will replcae the old name."); 
+    const kindId = await SqlSelectApi.SelectKindId(ctx.chat!.id, ctx.match);
+
+    // await SqlUpdateApi.UpdateUserStateAKId(ctx.chatId, ClientStateEnum.rename_kind, kindId);
+    await SqlUpdateApi.UpdateUser(ctx.chatId, { state: ClientStateEnum.rename_kind, action_kind_id: kindId });
+    await ctx.reply("input a new kind name, it will replcae the old name.");
 });
 
-controlComposer.command("rm_kind",async ctx => {
+controlComposer.command("rm_kind", async ctx => {
     if (ctx.match === "") {
         await ParamNotExistHandle(ctx, "kind");
         return;
     }
-    await sql.DeleteKind(ctx.chat.id, ctx.match);
+    await SqlDeleteApi.DeleteKind(ctx.chat.id, ctx.match);
     await ctx.replyFmt(fmt`Remove kind: ${code(ctx.match)}`);
 });
 
@@ -108,8 +112,9 @@ controlComposer.command("patch_tags", async ctx => {
         await ParamNotExistHandle(ctx, "kind");
         return;
     }
-    const kindId = await sql.SelectKindId(ctx.chat!.id, ctx.match);   // 确认kind存在
-    await sql.UpdateUserStateAKId(ctx.chatId, ClientStateEnum.patch_tags, kindId);
+    const kindId = await SqlSelectApi.SelectKindId(ctx.chat!.id, ctx.match);   // 确认kind存在
+    // await SqlUpdateApi.UpdateUserStateAKId(ctx.chatId, ClientStateEnum.patch_tags, kindId);
+    await SqlUpdateApi.UpdateUser(ctx.chatId, { state: ClientStateEnum.patch_tags, action_kind_id: kindId });
     await ctx.replyFmt(
         fmt`Please input new tags split by space. The new tag list will replace the old tag list.\nyou can just enter ${code(ReserveWord.exit)} to cancel.`,
     );
@@ -121,8 +126,9 @@ controlComposer.command("add_tags", async ctx => {
         await ParamNotExistHandle(ctx, "kind");
         return;
     }
-    const kindId = await sql.SelectKindId(ctx.chat!.id, ctx.match);   // 确认kind存在
-    await sql.UpdateUserStateAKId(ctx.chatId, ClientStateEnum.add_tags, kindId);
+    const kindId = await SqlSelectApi.SelectKindId(ctx.chat!.id, ctx.match);   // 确认kind存在
+    // await SqlUpdateApi.UpdateUserStateAKId(ctx.chatId, ClientStateEnum.add_tags, kindId);
+    await SqlUpdateApi.UpdateUser(ctx.chatId, { state: ClientStateEnum.add_tags, action_kind_id: kindId });
     await ctx.replyFmt(
         fmt`Input the tag you want to add, divided by space\nOr you can just enter ${code(ReserveWord.exit)} to cancel.`,
     );
@@ -133,8 +139,9 @@ controlComposer.command("rm_tags", async ctx => {
         await ParamNotExistHandle(ctx, "kind");
         return;
     }
-    const kindId = await sql.SelectKindId(ctx.chat!.id, ctx.match);   // 确认kind存在
-    await sql.UpdateUserStateAKId(ctx.chatId, ClientStateEnum.remove_tags, kindId);
+    const kindId = await SqlSelectApi.SelectKindId(ctx.chat!.id, ctx.match);   // 确认kind存在
+    // await SqlUpdateApi.UpdateUserStateAKId(ctx.chatId, ClientStateEnum.remove_tags, kindId);
+    await SqlUpdateApi.UpdateUser(ctx.chatId, { state: ClientStateEnum.remove_tags, action_kind_id: kindId });
     await ctx.replyFmt(
         fmt`Please input the tag you want to remove, divided by space.\nyou can just enter ${code(ReserveWord.clear)} to remove all tags or ${code(ReserveWord.exit)} to cancel.`
     );
@@ -143,7 +150,7 @@ controlComposer.command("rm_tags", async ctx => {
 
 // 用于取代对话的处理
 controlComposer.on("message:text", async ctx => {
-    const user = await sql.SelectUser(ctx.chatId);
+    const user = await SqlSelectApi.SelectUser(ctx.chatId);
     if (user.state == ClientStateEnum.default) {
         return;
     }
@@ -157,30 +164,31 @@ controlComposer.on("message:text", async ctx => {
         case ClientStateEnum.add_tags:
             // 添加
             const tagsToAdd = new Set<string>(text.split(" "));
-            const insertCount = await sql.InsertTags(kindId, tagsToAdd);
+            const insertCount = await SqlInertApi.InsertTags(kindId, tagsToAdd);
             await ctx.replyFmt(fmt`add tags, count: ${bold(insertCount)}`);
             break;
         case ClientStateEnum.remove_tags:
             // 删除
             if (text == ReserveWord.clear) {
-                await sql.DeleteAllKindTag(kindId);
+                await SqlDeleteApi.DeleteAllKindTag(kindId);
                 await ctx.reply("All tags have been remove.");
             } else {
                 const inputTags = new Set<string>(text.split(" "));
                 // 删除
-                const deleteCount = await sql.DeleteKindTag(kindId, inputTags);
+                const deleteCount = await SqlDeleteApi.DeleteKindTag(kindId, inputTags);
                 await ctx.replyFmt(fmt`remove tags, count: ${bold(deleteCount)}}`);
             }
             break;
         case ClientStateEnum.patch_tags:
             // // 覆盖
             const newTags = new Set<string>(text.split(" "));
-            await sql.DeleteAllKindTag(kindId);
-            await sql.InsertTags(kindId, newTags);
+            await SqlDeleteApi.DeleteAllKindTag(kindId);
+            await SqlInertApi.InsertTags(kindId, newTags);
             await ctx.replyFmt(fmt`patch tags, new tags count: ${bold(newTags.size)} `);
             break;
         case ClientStateEnum.rename_kind:
-            await sql.UpdateKindName(user.actionKindId, text);
+            // await SqlUpdateApi.UpdateKindName(user.actionKindId, text);
+            await SqlUpdateApi.UpdateKind(user.actionKindId, { kind: text });
             await ctx.replyFmt(fmt`rename to ${bold(text)} success.`);
             break;
         default:
@@ -188,7 +196,9 @@ controlComposer.on("message:text", async ctx => {
             levelLog(LogLevel.error, `Unhandle ClientState`);
             throw new Error("Unhandle ClientState");
     }
-    await sql.UpdateUserStateAKId(ctx.chatId, ClientStateEnum.default, -1);
+
+    // await SqlUpdateApi.UpdateUserStateAKId(ctx.chatId, ClientStateEnum.default, -1);
+    await SqlUpdateApi.UpdateUser(ctx.chatId, { state: ClientStateEnum.default, action_kind_id: -1 })
 });
 
 controlComposer.on("callback_query:data", async ctx => {
@@ -216,7 +226,8 @@ controlComposer.on("callback_query:data", async ctx => {
     } else {
         msg = `The Rating has been set: ${callbackData}`;
     }
-    await sql.UpdateUserRating(ctx.chatId!, newRating);
+    // await SqlUpdateApi.UpdateUserRating(ctx.chatId!, newRating);
+    await SqlUpdateApi.UpdateUser(ctx.chatId!, { rating: newRating })
     await ctx.answerCallbackQuery(msg);
 });
 

@@ -1,5 +1,4 @@
-import { sql } from "drizzle-orm";
-import { integer, text, sqliteTable, uniqueIndex, check, index } from "drizzle-orm/sqlite-core";
+import { integer, text, sqliteTable, uniqueIndex, index } from "drizzle-orm/sqlite-core";
 
 export const userTable = sqliteTable("user",
     {
@@ -15,7 +14,7 @@ export const kindTable = sqliteTable("kind",
     {
         id: integer().primaryKey({ autoIncrement: true }),
         kind: text().notNull(),
-        chat_id: integer().notNull(),
+        chat_id: integer().references(() => userTable.chat_id),
         count: integer().notNull().default(0),
     },
     table => [
@@ -31,6 +30,7 @@ export const tagTabel = sqliteTable("tag",
         tag: text().notNull(),
     },
     table => [
+        index("idx_tags_on_kindid").on(table.kind_id),
         uniqueIndex("unique_idx_tags_on_kindid_tag").on(table.kind_id, table.tag),
     ]
 );
@@ -40,13 +40,14 @@ export const cacheControlTable = sqliteTable("cache_control",
         id: integer().primaryKey({ autoIncrement: true }),
         tag: text().notNull(),
         rating: integer().notNull(),
-        update_time: integer().notNull(),
-        start_index: integer().notNull(),
-        end_index: integer().notNull(),
-        // invalid_cache_list: text({ mode: "json" }).notNull().$type<number[]>().default(sql`[]`),
+        user_id: integer().references(() => userTable.chat_id).notNull(),
+        shuffle_cache_list: text({ mode: "json" }).$type<number[]>().notNull(),
+        shuffle_index: integer().notNull(),
+        cache_start_id: integer().notNull(),
+        cache_end_id: integer().notNull(),
     },
     table => [
-        uniqueIndex("unique_idx_cache_control_on_tag_rating").on(table.tag, table.rating),
+        uniqueIndex("unique_idx_cache_control_on_tag_rating").on(table.tag, table.rating, table.user_id),
     ]
 );
 

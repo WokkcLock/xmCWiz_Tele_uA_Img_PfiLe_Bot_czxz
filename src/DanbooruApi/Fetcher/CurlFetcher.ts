@@ -1,5 +1,5 @@
 import AbstractFetcher from "./Fetcher.js";
-import { isEmptyObject } from "../../utils/Helper/ToolFunc.js";
+import { isEmptyObject } from "../../ToolFunc.js";
 import { exec } from "child_process";
 import queryString, { ParsedUrlQueryInput } from "querystring";
 

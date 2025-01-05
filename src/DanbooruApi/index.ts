@@ -1,17 +1,17 @@
 import AbstractFetcher from "./Fetcher/Fetcher.js";
 import CurlFetcher from "./Fetcher/CurlFetcher.js";
 import { LogLevel, levelLog } from "../utils/LevelLog.js";
-import { asyncSleep, getRandomInt, getRatingText } from "../utils/Helper/ToolFunc.js";
-import { AfterUpdateEmptyError, IdFetchError, TagFetchError } from "../utils/CustomError.js";
+import { asyncSleep, getRandomInt, getRatingText } from "../ToolFunc.js";
+import { FetchUpdateError, IdFetchError, TagFetchError } from "../utils/CustomError.js";
 import { ImageFileExtEnum, RatingEnum } from "../type/CustomEnum.js";
-import SqlApi from "../SqlApi/index.js";
-
-const sql = SqlApi.GetInstance();
-
+import SqlInertApi from "../SqlApi/InsertApi.js";
+import SqlSelectApi from "../SqlApi/SelectApi.js";
+import SqlDeleteApi from "../SqlApi/DeleteApi.js";
+import SqlUpdateApi from "../SqlApi/UpdateApi.js";
 
 const DanbooruBaseApiUrl = "https://danbooru.donmai.us/posts.json";
 const DanbooruGalleryBaseUrl = "https://danbooru.donmai.us/posts";
-const getLimit = 30; // 每次请求限制
+const getLimit = 50; // 每次请求限制
 
 class DanbooruApi {
     private static _instance: DanbooruApi | undefined = undefined;
@@ -89,7 +89,7 @@ class DanbooruApi {
         throw new IdFetchError(id);
     }
 
-    private async updateTagCache(rating: RatingEnum, tag: string) {
+    private async updateTagCache(chatId: number, rating: RatingEnum, tag: string) {
 
         let paramTag: string; 
         if (rating != RatingEnum.disable) {
@@ -176,7 +176,7 @@ class DanbooruApi {
             }
         }
         // 插入数据库
-        await sql.InsertCaches(rating, tag, dataList);
+        await SqlInertApi.InsertCaches(chatId, rating, tag, dataList);
     }
 
     async GetImageFromId(id: number) {
@@ -192,21 +192,28 @@ class DanbooruApi {
         };
     }
 
-    async GetImageFromTag(rating: RatingEnum, tag: string) {
-        let cacheItem = await sql.SelectCache(rating, tag);
-        if (cacheItem == undefined) {
-            // 缓存为空
-            await this.updateTagCache(rating, tag);
-            cacheItem = await sql.SelectCache(rating, tag);
+    async GetImageFromTag(chatId: number, rating: RatingEnum, tag: string) {
+        let cacheControlItem = await SqlSelectApi.SelectCacheControl(chatId, rating, tag);
+        if (cacheControlItem == undefined || cacheControlItem.index >= cacheControlItem.idList.length) {
+            // 缓存为空, 或被消耗完，触发更新
+            if (cacheControlItem != undefined) {
+                await SqlDeleteApi.DeleteCache(cacheControlItem.startId, cacheControlItem.endId);
+            }
+            await this.updateTagCache(chatId, rating, tag);
+            cacheControlItem = await SqlSelectApi.SelectCacheControl(chatId, rating, tag);
+            if (cacheControlItem == undefined) {
+                // 更新缓存失败
+                throw new FetchUpdateError(tag);
+            }
         }
 
-        if (cacheItem == undefined) {
-            // 更新缓存后仍然为空
-            throw new AfterUpdateEmptyError(tag);
-        }
+        const cacheId = cacheControlItem.idList[cacheControlItem.index];
 
+        const cacheItem = await SqlSelectApi.SelectCache(cacheId);
         const imageUrl = this.getSampleUrl(cacheItem.md5, cacheItem.file_ext);
-        // const imgByte = await this.getImg(imageUrl);
+
+        // 更新 cacheControl
+        await SqlUpdateApi.UpdateCacheControl(cacheControlItem.id, {shuffle_index: cacheControlItem.index + 1});
         return {
             dan_url: `${DanbooruGalleryBaseUrl}/${cacheItem!.image_id}`,
             image_data: await this.canRetryFetchImg(imageUrl, cacheItem.image_id),

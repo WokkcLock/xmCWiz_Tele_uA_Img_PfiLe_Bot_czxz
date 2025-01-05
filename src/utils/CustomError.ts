@@ -49,7 +49,7 @@ export class IdFetchError extends Error {
     }
 }
 
-export class AfterUpdateEmptyError extends Error {
+export class FetchUpdateError extends Error {
     constructor(tag: string) {
         super(`tag: ${tag}, update but can't fetch`);
         this.name = "AfterUpdateEmptyError";
