@@ -1,12 +1,25 @@
 import { KindAlreadyExistError, KindNameTooLongError, TagLenTooLongError } from "../utils/CustomError.js";
-import { ImageFileExtEnum, RatingEnum } from "../type/CustomEnum.js";
+import { ClientStateEnum, ImageFileExtEnum, RatingEnum } from "../type/CustomEnum.js";
 import db from "../db/index.js";
-import { kindTable, cacheTable, tagTabel, cacheControlTable } from "../db/schema.js";
+import { kindTable, cacheTable, tagTabel, cacheControlTable, userTable } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import { SqliteError } from "better-sqlite3";
 import { shuffleCollection } from "../ToolFunc.js";
 import { kindStrLenLimit, tagstrLenLimit } from "./Config.js";
 class SqlInertApi {
+    static async InsertUser(chatId: number) {
+        await db
+            .insert(userTable) 
+            .values(
+                {
+                    chat_id: chatId,
+                    rating: RatingEnum.disable,
+                    state: ClientStateEnum.default,
+                    action_kind_id: -1,
+                }
+            );
+    }
+
     static async InsertKind(chatId: number, kind: string) {
         if (kind.length > kindStrLenLimit) {
             throw new KindNameTooLongError(kind);
@@ -17,11 +30,8 @@ class SqlInertApi {
                 chat_id: chatId
             });
         } catch (err) {
-            if (err instanceof SqliteError) {
-                if (err.code == "SQLITE_CONSTRAINT_UNIQUE") {
-                    // 处理过程
-                    throw new KindAlreadyExistError(kind);
-                }
+            if (err instanceof SqliteError && err.code == "SQLITE_CONSTRAINT_UNIQUE") {
+                throw new KindAlreadyExistError(kind);
             } else {
                 throw err;
             }

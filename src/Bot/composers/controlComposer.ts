@@ -11,6 +11,7 @@ import SqlSelectApi from "../../SqlApi/SelectApi.js";
 import SqlInertApi from "../../SqlApi/InsertApi.js";
 import SqlUpdateApi from "../../SqlApi/UpdateApi.js";
 import SqlDeleteApi from "../../SqlApi/DeleteApi.js";
+import SqlWrapperApi from "../../SqlApi/WrapperApi.js";
 
 const controlComposer = new Composer<CusContext>();
 
@@ -22,7 +23,7 @@ controlComposer.command("set_rating", async ctx => {
         .row()
         .text("explicit")
         .text("disable");
-    let ratingText = getRatingText((await SqlSelectApi.SelectUser(ctx.chatId)).rating);
+    let ratingText = getRatingText((await SqlWrapperApi.GetSession(ctx.chatId)).rating);
     if (ratingText == undefined) {
         await ctx.replyFmt(
             fmt`you haven't set rating, you can set it by click the button below.`,
@@ -150,7 +151,7 @@ controlComposer.command("rm_tags", async ctx => {
 
 // 用于取代对话的处理
 controlComposer.on("message:text", async ctx => {
-    const user = await SqlSelectApi.SelectUser(ctx.chatId);
+    const user = await SqlWrapperApi.GetSession(ctx.chatId);
     if (user.state == ClientStateEnum.default) {
         return;
     }

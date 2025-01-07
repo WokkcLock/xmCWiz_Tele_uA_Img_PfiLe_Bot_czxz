@@ -3,6 +3,7 @@ import DanbooruApi from "../../DanbooruApi/index.js";
 import { bold, fmt, italic, link } from "@grammyjs/parse-mode";
 import { ParamNotExistHandle } from "../Helper/ToolFunc.js";
 import SqlSelectApi from "../../SqlApi/SelectApi.js";
+import SqlWrapperApi from "../../SqlApi/WrapperApi.js";
 
 
 const dan = await DanbooruApi.GetInstance();
@@ -31,7 +32,7 @@ danComposer.command("tag", async (ctx) => {
         ctx.reply("Your input tags invalid, please check danbooru");
         return;
     }
-    const rating = (await SqlSelectApi.SelectUser(ctx.chat.id)).rating;
+    const rating = (await SqlWrapperApi.GetSession(ctx.chatId)).rating;
     for (let i = 0; i < 2; i++) {
         try {
             const ret = await dan.GetImageFromTag(ctx.chatId, rating, tag);
@@ -55,7 +56,7 @@ danComposer.command("random", async ctx => {
         await ParamNotExistHandle(ctx, "kind");
         return;
     } 
-    const rating = (await SqlSelectApi.SelectUser(ctx.chat.id)).rating;
+    const rating = (await SqlWrapperApi.GetSession(ctx.chatId)).rating;
     const randomTag = await SqlSelectApi.SelectRandomKindTag(ctx.chat.id, ctx.match);
     for (let i = 0; i < 2; i++) {
         try {

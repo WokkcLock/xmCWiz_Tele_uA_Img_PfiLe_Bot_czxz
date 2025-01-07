@@ -24,7 +24,14 @@ class SqlDeleteApi {
         let deleteCount = 0;
         await db.transaction(async (tx) => {
             for (const tag of inputTagSet) {
-                deleteCount += (await tx.delete(tagTabel).where(eq(tagTabel.tag, tag)).returning({ id: tagTabel.id })).length;
+                deleteCount += (await tx
+                    .delete(tagTabel)
+                    .where(and(
+                        eq(tagTabel.tag, tag),
+                        eq(tagTabel.kind_id, kindId)
+                    ))
+                    .returning({ id: tagTabel.id })
+                ).length;
             }
             if (deleteCount != 0) {
                 const { count: oldKindCount } = (await tx.select({ count: kindTable.count })

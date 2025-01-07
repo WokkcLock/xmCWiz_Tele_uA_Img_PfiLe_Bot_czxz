@@ -10,11 +10,12 @@ export const userTable = sqliteTable("user",
     _ => [],
 );
 
-export const kindTable = sqliteTable("kind",
+export const kindTable = sqliteTable("kinds",
     {
         id: integer().primaryKey({ autoIncrement: true }),
         kind: text().notNull(),
-        chat_id: integer().references(() => userTable.chat_id),
+        chat_id: integer(),     // 这里不需要和userTable建立外键联系, 因为 user_table中的项不会删除。
+                                // 假如添加外键限制,会导致需要先/tag才能/add_kind的bug
         count: integer().notNull().default(0),
     },
     table => [
@@ -23,7 +24,7 @@ export const kindTable = sqliteTable("kind",
     ]
 );
 
-export const tagTabel = sqliteTable("tag",
+export const tagTabel = sqliteTable("tags",
     {
         id: integer().primaryKey({ autoIncrement: true }),
         kind_id: integer().references(() => kindTable.id, { onDelete: "cascade" }),

@@ -1,5 +1,5 @@
 import { EmptyKindError, KindNotExistError } from "../utils/CustomError.js";
-import { ClientStateEnum, RatingEnum } from "../type/CustomEnum.js";
+import { RatingEnum } from "../type/CustomEnum.js";
 import db from "../db/index.js";
 import { kindTable, cacheTable, tagTabel, cacheControlTable, userTable } from "../db/schema.js";
 import { and, eq } from "drizzle-orm";
@@ -17,21 +17,22 @@ class SqlSelectApi {
         if (ret.length > 0) {
             return ret[0];
         }
-
-        // 不存在则插入
-        await db.insert(userTable).values({
-            chat_id: chatId,
-            rating: RatingEnum.disable,
-            state: ClientStateEnum.default,
-            action_kind_id: -1,
-        });
-        return {
-            rating: RatingEnum.disable,
-            state: ClientStateEnum.default,
-            actionKindId: -1,
-        };
-
+        return undefined;
     }
+
+    //     // 不存在则插入
+    //     await db.insert(userTable).values({
+    //         chat_id: chatId,
+    //         rating: RatingEnum.disable,
+    //         state: ClientStateEnum.default,
+    //         action_kind_id: -1,
+    //     });
+    //     return {
+    //         rating: RatingEnum.disable,
+    //         state: ClientStateEnum.default,
+    //         actionKindId: -1,
+    //     };
+    // }
 
     static async SelectKindId(chatId: number, kind: string) {
         const ret = await db

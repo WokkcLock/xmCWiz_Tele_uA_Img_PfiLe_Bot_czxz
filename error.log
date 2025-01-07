@@ -1,0 +1,8 @@
+SqliteError: FOREIGN KEY constraint failed
+    at PreparedQuery.run (file:///home/comiko/CtData/ts/Pro/Bot/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/.pnpm/drizzle-orm@0.38.2_@types+better-sqlite3@7.6.12_better-sqlite3@11.7.0/node_modules/drizzle-orm/better-sqlite3/session.js:66:22)
+    at QueryPromise.run (file:///home/comiko/CtData/ts/Pro/Bot/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/.pnpm/drizzle-orm@0.38.2_@types+better-sqlite3@7.6.12_better-sqlite3@11.7.0/node_modules/drizzle-orm/sqlite-core/query-builders/insert.js:152:28)
+    at QueryPromise.execute (file:///home/comiko/CtData/ts/Pro/Bot/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/.pnpm/drizzle-orm@0.38.2_@types+better-sqlite3@7.6.12_better-sqlite3@11.7.0/node_modules/drizzle-orm/sqlite-core/query-builders/insert.js:164:54)
+    at QueryPromise.then (file:///home/comiko/CtData/ts/Pro/Bot/xmCWiz_Tele_uA_Img_PfiLe_Bot_czxz/node_modules/.pnpm/drizzle-orm@0.38.2_@types+better-sqlite3@7.6.12_better-sqlite3@11.7.0/node_modules/drizzle-orm/query-promise.js:21:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  code: 'SQLITE_CONSTRAINT_FOREIGNKEY'
+}
