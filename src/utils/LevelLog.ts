@@ -55,10 +55,4 @@ function setLogLevel(newLogLevel: LogLevel) {
 }
 
 
-function generateSingleLevelLog(level: LogLevel) {
-    return (...args: any[]) => {
-        levelLog(level, ...args);
-    }
-}
-
-export { levelLog, LogLevel, setLogLevel, fileErrorLoger, generateSingleLevelLog };
+export { levelLog, LogLevel, setLogLevel, fileErrorLoger };

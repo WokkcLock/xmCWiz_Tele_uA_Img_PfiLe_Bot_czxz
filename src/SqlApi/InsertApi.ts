@@ -5,7 +5,6 @@ import { kindTable, cacheTable, tagTabel, cacheControlTable, userTable } from ".
 import { eq } from "drizzle-orm";
 import { shuffleCollection } from "../ToolFunc.js";
 import { kindStrLenLimit, tagstrLenLimit } from "./Config.js";
-import { levelLog, LogLevel } from "../utils/LevelLog.js";
 import { LibsqlError } from "@libsql/client/sqlite3";
 class SqlInertApi {
     static async InsertUser(chatId: number) {
