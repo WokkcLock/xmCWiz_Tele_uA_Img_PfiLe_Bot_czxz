@@ -1,6 +1,5 @@
 import "dotenv/config";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/libsql/sqlite3";
 import fs from "fs";
 import { generateSingleLevelLog, LogLevel } from "../utils/LevelLog.js";
 if (!fs.existsSync("private")) {
@@ -8,15 +7,19 @@ if (!fs.existsSync("private")) {
 }
 
 
+// const db = drizzle({
+//     client: new Database(process.env.DB_URL == undefined ?  "private/sql.db" : process.env.DB_URL, 
+//         { 
+//             verbose: generateSingleLevelLog(LogLevel.sql) 
+//         }
+//     ),
+// });
 const db = drizzle({
-    client: new Database(process.env.DB_URL == undefined ?  "private/sql.db" : process.env.DB_URL, 
-        { 
-            verbose: generateSingleLevelLog(LogLevel.sql) 
-        }
-    ),
+    connection: {
+        url: process.env.DB_URL!
+    }
 });
-
-db.$client.pragma("synchronous=OFF");    // 关闭写同步, 提升性能
-db.$client.pragma("journal_mode=WAL");    // 开启WAL: Write Ahead Logging
+await db.$client.execute("PRAGMA synchronous = OFF;"); // 关闭写同步, 提升性能
+await db.$client.execute("PRAGMA journal_mode=WAL;"); // 开启WAL: Write Ahead Logging
 
 export default db;

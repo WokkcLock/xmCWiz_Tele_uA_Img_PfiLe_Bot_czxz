@@ -3,9 +3,10 @@ import { ClientStateEnum, ImageFileExtEnum, RatingEnum } from "../type/CustomEnu
 import db from "../db/index.js";
 import { kindTable, cacheTable, tagTabel, cacheControlTable, userTable } from "../db/schema.js";
 import { eq } from "drizzle-orm";
-import { SqliteError } from "better-sqlite3";
 import { shuffleCollection } from "../ToolFunc.js";
 import { kindStrLenLimit, tagstrLenLimit } from "./Config.js";
+import { levelLog, LogLevel } from "../utils/LevelLog.js";
+import { LibsqlError } from "@libsql/client/sqlite3";
 class SqlInertApi {
     static async InsertUser(chatId: number) {
         await db
@@ -30,7 +31,7 @@ class SqlInertApi {
                 chat_id: chatId
             });
         } catch (err) {
-            if (err instanceof SqliteError && err.code == "SQLITE_CONSTRAINT_UNIQUE") {
+            if (err instanceof LibsqlError && err.code == "SQLITE_CONSTRAINT_UNIQUE") {
                 throw new KindAlreadyExistError(kind);
             } else {
                 throw err;

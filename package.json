@@ -10,20 +10,19 @@
     "dpush": "drizzle-kit push"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.12",
-    "@types/node": "^22.10.2",
-    "drizzle-kit": "^0.30.1",
+    "@types/node": "^22.13.15",
+    "drizzle-kit": "^0.30.6",
     "rimraf": "^6.0.1",
-    "typescript": "^5.7.2"
+    "typescript": "^5.8.2"
   },
   "type": "module",
   "dependencies": {
-    "@grammyjs/parse-mode": "^1.10.0",
-    "better-sqlite3": "^11.7.0",
-    "chalk": "^5.4.0",
+    "@grammyjs/parse-mode": "^1.11.1",
+    "@libsql/client": "^0.15.2",
+    "chalk": "^5.4.1",
     "dotenv": "^16.4.7",
-    "drizzle-orm": "^0.38.2",
-    "grammy": "^1.33.0",
+    "drizzle-orm": "^0.41.0",
+    "grammy": "^1.35.1",
     "socks-proxy-agent": "^8.0.5"
   }
 }
